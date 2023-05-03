@@ -1,26 +1,39 @@
-<div align="center">
- <h1> Hi, I'm Atman <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="35px"></h1>
-</div>
+<p align="center">
+<img align="center" src="https://readme-typing-svg.herokuapp.com?font=Silkscreen&size=26&pause=1500&color=41B783&background=27384900&vCenter=true&lines=Hi+there%2C+I'm+Atman+%F0%9F%91%8B)](https://git.io/typing-svg"  />
+</p>
 
-<br>
+<h3 align="center"  >A passionate computer science student</h3>
 
-<div align="center">
- <a href="https://www.linkedin.com/in/atman-boz/" target="_blank">
-   <img align="center" alt="John Kirtley | Linkedin " width="40px" src="http://www.prepare1.com/wp-content/uploads/2014/04/linkedin-logo-high-res-1254-1024x1024.jpg"</a>
-  
- </div>
+<p align="center" width="100%">
+<img align="left" width="65%" src="https://github-readme-stats.vercel.app/api?username=atman0eirb&theme=vue-dark&hide_border=true&include_all_commits=true&count_private=true&show_icons=true" />
+</p>
+                                                                                                                                                             
+                                                                                                                                                           
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
-<br>
-
-<div align="center">
-<h3>💻 Computer science student </h3>
-</div>
 
 
 
-<br>
+ 
+ 
 
-![Atman's github stats](https://github-readme-stats.vercel.app/api?username=atman0eirb&count_private=true&show_icons=true&theme=default)
+
+- 📫 How to reach me **atman.bozcf@gmail.com**
+
+
+<h1 align="left">
+
+<h1 align="left">
 
 
 
