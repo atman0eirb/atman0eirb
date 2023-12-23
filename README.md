@@ -16,9 +16,6 @@
 
 <br>
 
-<div align="center">
-<h3>💻 A passionate computer science student </h3>
-</div>
 
 ### Frequently Used Languages and Tools 
 
