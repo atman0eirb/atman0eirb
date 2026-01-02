@@ -7,13 +7,10 @@
   <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px"/>
 </h2>
 
-I'm **[`atman`]**
+I'm **[`dextr`]**
 
 
 <br>
-
-![Atman's github stats](https://github-readme-stats.vercel.app/api?username=atman0eirb&count_private=true&show_icons=true&theme=default)
-
 
   <b><i>"Never give up. Never back down."</i></b>
 </p>
